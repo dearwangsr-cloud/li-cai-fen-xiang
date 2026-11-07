@@ -1,0 +1,17 @@
+{
+  "name": "定投理财博主实盘战报",
+  "short_name": "实盘战报",
+  "description": "打工人攒钱日记与定投理财数据可视化工具",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

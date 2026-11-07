@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>定投理财博主实盘面板</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2canvas for 自动导出图片 -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    .light-watermark-bg {
+      background-image: radial-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased pb-12">
+
+  <div class="max-w-4xl mx-auto px-4 py-6">
+    <!-- 页头与控制按钮 -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-200 pb-4">
+      <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+          <span>📈</span> 定投理财博主实盘面板
+        </h1>
+        <p class="text-xs text-slate-500 mt-1">打工人攒钱日记 · 数据自动化统计与多账户精细化管理</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="export-img-btn" onclick="exportCardImage()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-3.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 shadow-sm">
+          📸 一键导出实盘战报
+        </button>
+        <button onclick="openAccountModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-3.5 py-1.5 rounded-lg font-medium transition shadow-sm">
+          + 新增账户
+        </button>
+      </div>
+    </header>
+
+    <!-- 账户筛选 Tab 导航条 -->
+    <div class="flex items-center justify-between mb-4 overflow-x-auto pb-1" id="account-tabs">
+      <!-- 动态渲染账户 Tab 按钮 -->
+    </div>
+
+    <!-- 核心战报卡片区 -->
+    <div id="capture-area" class="space-y-6">
+      
+      <!-- 主战报卡片 -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xl relative overflow-hidden light-watermark-bg">
+        <!-- 头部信息 -->
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+              💰
+            </div>
+            <div>
+              <div class="font-bold text-slate-900 text-base flex items-center gap-2">
+                <span id="display-blogger-name">打工人攒钱日记</span>
+                <span class="text-xs text-slate-400 font-normal" id="current-view-tag">· 全局总览</span>
+                <button onclick="editBloggerName()" class="text-xs text-slate-400 hover:text-indigo-600 no-export" title="修改博主名称">✏️</button>
+              </div>
+              <div class="text-xs text-slate-400" id="current-date-text">更新时间：2026.11.07</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="bg-indigo-50 text-indigo-600 border border-indigo-200/60 text-xs font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+              <span>🗓️</span> 实盘第 <span id="days-count">365</span> 天
+            </span>
+            <button id="edit-start-date-btn" onclick="editAccountStartDate()" class="text-xs text-slate-400 hover:text-indigo-600 no-export bg-slate-50 border border-slate-200 px-2 py-1 rounded-md" title="修改起始日期" style="display:none;">修改日期</button>
+          </div>
+        </div>
+
+        <!-- 4大核心数据网格 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1">累计投入本金</div>
+            <div class="text-xl font-extrabold text-slate-900" id="total-principal">¥ 0.00</div>
+          </div>
+          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1">当前资产总值</div>
+            <div class="text-xl font-extrabold text-indigo-600" id="total-asset">¥ 0.00</div>
+          </div>
+          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1">持仓累计收益</div>
+            <div class="text-xl font-extrabold" id="total-profit">¥ 0.00</div>
+          </div>
+          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1">整体收益率</div>
+            <div class="text-xl font-extrabold" id="total-rate">0.00%</div>
+          </div>
+        </div>
+
+        <!-- 统计图表区（自适应全局或账户类型：支持饼图与平滑历史净值曲线） -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2" id="charts-container">
+          <!-- 动态渲染图表1 -->
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1">
+              <span>📊</span> <span id="chart1-title">全局标的分散度 / 占比</span>
+            </h3>
+            <div class="h-48 relative flex items-center justify-center">
+              <canvas id="chart1"></canvas>
+            </div>
+          </div>
+          <!-- 动态渲染图表2 -->
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1">
+              <span>📉</span> <span id="chart2-title">各标的盈亏对比 (元)</span>
+            </h3>
+            <div class="h-48 relative">
+              <canvas id="chart2"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 当前选中账户的详细持仓清单 / 历史净值记录管理 -->
+      <div id="account-details-container" class="space-y-4">
+        <!-- 由 JS 动态渲染 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：新增/编辑账户 -->
+  <div id="account-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-900">新增投资账户</h3>
+      <div>
+        <label class="block text-xs text-slate-600 mb-1">账户名称</label>
+        <input type="text" id="acc-name-input" placeholder="例如：养老定投账户、稳健理财账户" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+      </div>
+      <div>
+        <label class="block text-xs text-slate-600 mb-1">实盘起始日期（用于计算实盘天数）</label>
+        <input type="date" id="acc-start-date" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+      </div>
+      <div>
+        <label class="block text-xs text-slate-600 mb-1">账户模式选择</label>
+        <select id="acc-mode-select" onchange="toggleAccountModeInput()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+          <option value="detailed">明细模式（逐个录入持仓标的，自动汇总）</option>
+          <option value="summary">极简总览模式（直接录入账户总本金与市值，支持历史曲线）</option>
+        </select>
+      </div>
+
+      <!-- 仅在极简模式下显示的初始输入框 -->
+      <div id="summary-inputs" class="hidden space-y-3 pt-2 border-t border-slate-200">
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">当前总投入本金 (元)</label>
+          <input type="number" id="acc-summary-principal" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">当前总市值 (元)</label>
+          <input type="number" id="acc-summary-asset" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAccountModal()" class="px-4 py-2 text-xs text-slate-500 hover:text-slate-800">取消</button>
+        <button onclick="saveAccount()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm">保存账户</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：新增/编辑标的 -->
+  <div id="target-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-900" id="target-modal-title">添加投资标的</h3>
+      <input type="hidden" id="target-acc-id">
+      <input type="hidden" id="target-edit-id">
+      <div>
+        <label class="block text-xs text-slate-600 mb-1">标的名称</label>
+        <input type="text" id="target-name" placeholder="例如：创业板指数基金 / 纳斯达克 ETF" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">累计本金 (元)</label>
+          <input type="number" id="target-principal" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">当前市值 (元)</label>
+          <input type="number" id="target-asset" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeTargetModal()" class="px-4 py-2 text-xs text-slate-500 hover:text-slate-800">取消</button>
+        <button onclick="saveTarget()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm">保存标的</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：添加历史净值记录点 -->
+  <div id="history-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-900">记录历史净值数据</h3>
+      <input type="hidden" id="history-acc-id">
+      <div>
+        <label class="block text-xs text-slate-600 mb-1">记录日期</label>
+        <input type="date" id="history-date" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">当时总本金 (元)</label>
+          <input type="number" id="history-principal" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">当时总市值 (元)</label>
+          <input type="number" id="history-asset" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeHistoryModal()" class="px-4 py-2 text-xs text-slate-500 hover:text-slate-800">取消</button>
+        <button onclick="saveHistoryRecord()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm">保存记录</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 核心数据结构与初始样例 ---
+    const STORAGE_KEY = 'invest_dashboard_data_v3';
+    
+    let defaultData = {
+      bloggerName: "打工人攒钱日记",
+      accounts: [
+        {
+          id: 'acc-1',
+          name: '养老定投账户',
+          startDate: '2026-01-01',
+          mode: 'detailed',
+          summaryPrincipal: 0,
+          summaryAsset: 0,
+          targets: [
+            { id: 't-1', name: '创业板指数基金', principal: 15000, asset: 16800 },
+            { id: 't-2', name: '中证红利指数基金', principal: 20000, asset: 21500 }
+          ],
+          history: [
+            { id: 'h-1', date: '2026-01-01', principal: 10000, asset: 10100 },
+            { id: 'h-2', date: '2026-02-01', principal: 22000, asset: 23500 },
+            { id: 'h-3', date: '2026-03-01', principal: 35000, asset: 38300 }
+          ]
+        },
+        {
+          id: 'acc-2',
+          name: '稳健理财总览',
+          startDate: '2026-02-01',
+          mode: 'summary',
+          summaryPrincipal: 10000,
+          summaryAsset: 11200,
+          targets: [],
+          history: [
+            { id: 'h-201', date: '2026-02-01', principal: 5000, asset: 5050 },
+            { id: 'h-202', date: '2026-03-01', principal: 10000, asset: 11200 }
+          ]
+        }
+      ]
+    };
+
+    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData;
+
+    let chart1Instance = null;
+    let chart2Instance = null;
+    let currentTab = 'all'; // 'all' 或 账户 ID
+
+    // --- 逻辑初始化 ---
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('current-date-text').innerText = `更新时间：${new Date().toLocaleDateString('zh-CN')}`;
+      renderApp();
+    });
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      renderApp();
+    }
+
+    function renderApp() {
+      document.getElementById('display-blogger-name').innerText = appData.bloggerName;
+      renderTabs();
+      calculateAndRenderActiveData();
+      renderAccountsDetail();
+    }
+
+    function calculateDays(startDateStr) {
+      if (!startDateStr) return 1;
+      const start = new Date(startDateStr);
+      const today = new Date();
+      start.setHours(0,0,0,0);
+      today.setHours(0,0,0,0);
+      const diffTime = today - start;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return diffDays > 0 ? diffDays : 1;
+    }
+
+    // 根据当前选中的 Tab 计算并渲染顶部统计与图表
+    function calculateAndRenderActiveData() {
+      let totalPrincipal = 0;
+      let totalAsset = 0;
+      let targetList = [];
+      let activeStartDate = '2026-01-01';
+      let activeHistory = [];
+
+      if (currentTab === 'all') {
+        document.getElementById('current-view-tag').innerText = '· 全局总览';
+        document.getElementById('edit-start-date-btn').style.display = 'none';
+
+        let earliestDate = null;
+        appData.accounts.forEach(acc => {
+          if (acc.startDate) {
+            if (!earliestDate || new Date(acc.startDate) < new Date(earliestDate)) {
+              earliestDate = acc.startDate;
+            }
+          }
+          if (acc.mode === 'summary') {
+            totalPrincipal += Number(acc.summaryPrincipal || 0);
+            totalAsset += Number(acc.summaryAsset || 0);
+            targetList.push({
+              name: `${acc.name} (总览)`,
+              principal: Number(acc.summaryPrincipal || 0),
+              asset: Number(acc.summaryAsset || 0)
+            });
+          } else {
+            acc.targets.forEach(t => {
+              totalPrincipal += Number(t.principal || 0);
+              totalAsset += Number(t.asset || 0);
+              targetList.push({
+                name: t.name,
+                principal: Number(t.principal || 0),
+                asset: Number(t.asset || 0)
+              });
+            });
+          }
+        });
+        activeStartDate = earliestDate || '2026-01-01';
+        document.getElementById('days-count').innerText = calculateDays(activeStartDate);
+
+        // 全局视图：渲染全局资产占比饼图 + 盈亏对比柱状图
+        renderGlobalCharts(targetList);
+
+      } else {
+        // 选中了某个特定平行账户
+        const acc = appData.accounts.find(a => a.id === currentTab);
+        if (!acc) return;
+
+        document.getElementById('current-view-tag').innerText = `· ${acc.name}`;
+        document.getElementById('edit-start-date-btn').style.display = 'inline-block';
+
+        activeStartDate = acc.startDate || '2026-01-01';
+        document.getElementById('days-count').innerText = calculateDays(activeStartDate);
+
+        if (acc.mode === 'summary') {
+          totalPrincipal = Number(acc.summaryPrincipal || 0);
+          totalAsset = Number(acc.summaryAsset || 0);
+        } else {
+          acc.targets.forEach(t => {
+            totalPrincipal += Number(t.principal || 0);
+            totalAsset += Number(t.asset || 0);
+          });
+        }
+
+        // 渲染该账户专属图表
+        renderAccountSpecificCharts(acc);
+      }
+
+      // 计算收益与收益率
+      const totalProfit = totalAsset - totalPrincipal;
+      const totalRate = totalPrincipal > 0 ? (totalProfit / totalPrincipal) * 100 : 0;
+
+      // 更新 DOM
+      document.getElementById('total-principal').innerText = `¥ ${totalPrincipal.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+      document.getElementById('total-asset').innerText = `¥ ${totalAsset.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+      
+      const profitEl = document.getElementById('total-profit');
+      const rateEl = document.getElementById('total-rate');
+      
+      profitEl.innerText = `${totalProfit >= 0 ? '+' : ''}¥ ${totalProfit.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+      rateEl.innerText = `${totalRate >= 0 ? '+' : ''}${totalRate.toFixed(2)}%`;
+
+      const isPositive = totalProfit >= 0;
+      profitEl.className = `text-xl font-extrabold ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
+      rateEl.className = `text-xl font-extrabold ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
+    }
+
+    // 渲染全局图表（饼图 + 柱状图）
+    function renderGlobalCharts(targetList) {
+      document.getElementById('chart1-title').innerText = '全局标的分散度 / 占比';
+      document.getElementById('chart2-title').innerText = '各标的盈亏对比 (元)';
+
+      const labels = targetList.map(t => t.name);
+      const assetData = targetList.map(t => t.asset);
+      const profitData = targetList.map(t => t.asset - t.principal);
+      // 柔和高级色：玫瑰红与温润绿
+      const profitColors = profitData.map(p => p >= 0 ? '#fb7185' : '#34d399'); 
+
+      // 1. 饼图
+      const ctx1 = document.getElementById('chart1').getContext('2d');
+      if (chart1Instance) chart1Instance.destroy();
+      chart1Instance = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: assetData,
+            backgroundColor: ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#475569', boxWidth: 10, font: { size: 10, weight: '500' } } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                  return ` 市值: ¥${val.toLocaleString()} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // 2. 柱状图
+      const ctx2 = document.getElementById('chart2').getContext('2d');
+      if (chart2Instance) chart2Instance.destroy();
+      chart2Instance = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: profitData,
+            backgroundColor: profitColors,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw || 0;
+                  return ` 盈亏: ${val >= 0 ? '+' : ''}¥${val.toLocaleString()}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#475569', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#475569', font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
+    // 渲染平行账户专属图表（总览模式显示历史平滑曲线；明细模式显示标的占比饼图 + 历史平滑曲线）
+    function renderAccountSpecificCharts(acc) {
+      const container = document.getElementById('charts-container');
+      
+      let historyData = acc.history || [];
+      // 按时间先后排序
+      historyData.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      const hLabels = historyData.map(h => h.date);
+      const hPrincipal = historyData.map(h => h.principal);
+      const hAsset = historyData.map(h => h.asset);
+
+      if (acc.mode === 'summary') {
+        // 极简总览模式：仅展示历史净值平滑曲线（独占两栏宽度）
+        container.innerHTML = `
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm md:col-span-2">
+            <h3 class="text-xs font-bold text-slate-600 mb-3 flex items-center justify-between">
+              <span class="flex items-center gap-1">📈 <span>${acc.name} - 历史净值与本金增长趋势</span></span>
+              <span class="text-[10px] text-indigo-600 font-normal">平滑曲线追踪</span>
+            </h3>
+            <div class="h-56 relative">
+              <canvas id="historyLineChart"></canvas>
+            </div>
+          </div>
+        `;
+        renderSmoothLineChart('historyLineChart', hLabels, hPrincipal, hAsset);
+      } else {
+        // 明细模式：左侧资产占比饼图，右侧历史净值平滑曲线
+        container.innerHTML = `
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1">
+              <span>📊</span> <span>${acc.name} - 标的占比</span>
+            </h3>
+            <div class="h-48 relative flex items-center justify-center">
+              <canvas id="accPieChart"></canvas>
+            </div>
+          </div>
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1">
+              <span>📈</span> <span>${acc.name} - 历史净值平滑曲线</span>
+            </h3>
+            <div class="h-48 relative">
+              <canvas id="accLineChart"></canvas>
+            </div>
+          </div>
+        `;
+
+        // 渲染饼图
+        const targetLabels = acc.targets.map(t => t.name);
+        const targetAssets = acc.targets.map(t => t.asset);
+        const ctxPie = document.getElementById('accPieChart').getContext('2d');
+        if (chart1Instance) chart1Instance.destroy();
+        chart1Instance = new Chart(ctxPie, {
+          type: 'doughnut',
+          data: {
+            labels: targetLabels,
+            datasets: [{
+              data: targetAssets,
+              backgroundColor: ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'],
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: '#475569', boxWidth: 8, font: { size: 9 } } } }
+          }
+        });
+
+        renderSmoothLineChart('accLineChart', hLabels, hPrincipal, hAsset);
+      }
+    }
+
+    // 渲染平滑曲线图工具函数（无点标记，横坐标智能精简）
+    function renderSmoothLineChart(canvasId, labels, principalData, assetData) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      if (chart2Instance) chart2Instance.destroy();
+
+      chart2Instance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '当前市值',
+              data: assetData,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.08)',
+              fill: true,
+              tension: 0.4, // 平滑曲线
+              pointRadius: 0, // 曲线上面无不同时间的点标记
+              pointHoverRadius: 5,
+              borderWidth: 2.5
+            },
+            {
+              label: '累计本金',
+              data: principalData,
+              borderColor: '#94a3b8',
+              backgroundColor: 'transparent',
+              borderDash: [4, 4],
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              borderWidth: 1.5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { color: '#475569', boxWidth: 10, font: { size: 10 } } },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ¥${context.raw.toLocaleString()}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#64748b',
+                font: { size: 10 },
+                maxTicksLimit: 3, // 关键：横坐标仅显示首、中、末约 3 个时间点，避免拥挤
+                align: 'inner'
+              },
+              grid: { display: false }
+            },
+            y: {
+              ticks: { color: '#64748b', font: { size: 10 } },
+              grid: { color: '#f1f5f9' }
+            }
+          }
+        }
+      });
+    }
+
+    // 渲染账户筛选 Tab 按钮
+    function renderTabs() {
+      const container = document.getElementById('account-tabs');
+      let html = `<button onclick="switchTab('all')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm ${currentTab === 'all' ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">📁 全部账户汇总</button>`;
+      
+      appData.accounts.forEach(acc => {
+        html += `<button onclick="switchTab('${acc.id}')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm ${currentTab === acc.id ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">💼 ${acc.name}</button>`;
+      });
+      container.innerHTML = html;
+    }
+
+    function switchTab(tabId) {
+      currentTab = tabId;
+      renderTabs();
+      calculateAndRenderActiveData();
+      renderAccountsDetail();
+    }
+
+    // 渲染下方账户详情清单（支持明细标的编辑/删除、历史记录管理）
+    function renderAccountsDetail() {
+      const container = document.getElementById('account-details-container');
+      container.innerHTML = '';
+
+      const list = currentTab === 'all' ? appData.accounts : appData.accounts.filter(a => a.id === currentTab);
+
+      list.forEach(acc => {
+        let accPrincipal = 0;
+        let accAsset = 0;
+
+        if (acc.mode === 'summary') {
+          accPrincipal = Number(acc.summaryPrincipal || 0);
+          accAsset = Number(acc.summaryAsset || 0);
+        } else {
+          acc.targets.forEach(t => {
+            accPrincipal += Number(t.principal || 0);
+            accAsset += Number(t.asset || 0);
+          });
+        }
+
+        const accProfit = accAsset - accPrincipal;
+        const accRate = accPrincipal > 0 ? (accProfit / accPrincipal) * 100 : 0;
+        const isPositive = accProfit >= 0;
+        const accDays = calculateDays(acc.startDate);
+
+        let cardHtml = `
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 text-sm">${acc.name}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">实盘 ${accDays} 天</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-500">${acc.mode === 'summary' ? '总览/曲线模式' : '明细模式'}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-right">
+                  <span class="text-xs ${isPositive ? 'text-rose-500' : 'text-emerald-600'} font-bold">
+                    ${accProfit >= 0 ? '+' : ''}${accProfit.toFixed(2)}元 (${accRate.toFixed(2)}%)
+                  </span>
+                </div>
+                <button onclick="deleteAccount('${acc.id}')" class="text-xs text-slate-400 hover:text-rose-600 no-export" title="删除账户">🗑️</button>
+              </div>
+            </div>
+        `;
+
+        if (acc.mode === 'detailed') {
+          // 明细模式：标的列表（带编辑和删除按钮）
+          cardHtml += `
+            <div class="space-y-2 mb-3">
+              ${acc.targets.map(t => {
+                const p = t.asset - t.principal;
+                const r = t.principal > 0 ? (p / t.principal) * 100 : 0;
+                return `
+                  <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-lg flex justify-between items-center text-xs">
+                    <div>
+                      <div class="font-semibold text-slate-700">${t.name}</div>
+                      <div class="text-[10px] text-slate-400">本金: ¥${t.principal} | 市值: ¥${t.asset}</div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="font-bold ${p >= 0 ? 'text-rose-500' : 'text-emerald-600'}">
+                        ${p >= 0 ? '+' : ''}${p.toFixed(1)} (${r.toFixed(1)}%)
+                      </span>
+                      <div class="flex items-center gap-1.5 no-export">
+                        <button onclick="openEditTargetModal('${acc.id}', '${t.id}', '${t.name}', ${t.principal}, ${t.asset})" class="text-slate-400 hover:text-indigo-600" title="编辑标">✏️</button>
+                        <button onclick="deleteTarget('${acc.id}', '${t.id}')" class="text-slate-400 hover:text-rose-600" title="删除标">✕</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            <button onclick="openTargetModal('${acc.id}')" class="w-full py-2 border border-dashed border-slate-300 rounded-lg text-xs text-slate-500 hover:text-indigo-600 hover:border-indigo-400 transition font-medium no-export mb-4">
+              + 添加持仓标的
+            </button>
+          `;
+        } else {
+          // 总览模式快捷数据修改
+          cardHtml += `
+            <div class="bg-slate-50 border border-slate-100 p-3 rounded-lg flex justify-between items-center text-xs mb-4">
+              <span class="text-slate-600">总投入: <b>¥${accPrincipal}</b></span>
+              <span class="text-slate-600">当前市值: <b>¥${accAsset}</b></span>
+              <button onclick="openEditSummaryModal('${acc.id}', ${accPrincipal}, ${accAsset})" class="text-indigo-600 hover:underline font-medium text-xs no-export">修改当前数据</button>
+            </div>
+          `;
+        }
+
+        // 历史净值记录管理模块（两种模式均可维护历史曲线数据）
+        cardHtml += `
+          <div class="border-t border-slate-100 pt-3 mt-2">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold text-slate-600">📅 历史净值曲线记录点 (${(acc.history || []).length})</span>
+              <button onclick="openHistoryModal('${acc.id}')" class="text-xs text-indigo-600 hover:underline font-medium no-export">+ 添加历史记录点</button>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${(acc.history || []).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(h => `
+                <span class="bg-slate-100 border border-slate-200 text-slate-600 text-[10px] px-2 py-1 rounded-md flex items-center gap-1">
+                  <b>${h.date}</b> (本:¥${h.principal}, 市:¥${h.asset})
+                  <button onclick="deleteHistoryRecord('${acc.id}', '${h.id}')" class="text-slate-400 hover:text-rose-600 no-export ml-1">×</button>
+                </span>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        cardHtml += `</div>`;
+        container.innerHTML += cardHtml;
+      });
+    }
+
+    // --- 互动操作逻辑 ---
+    function editBloggerName() {
+      const name = prompt("请输入你的公众号名称：", appData.bloggerName);
+      if (name) {
+        appData.bloggerName = name;
+        saveData();
+      }
+    }
+
+    function editAccountStartDate() {
+      if (currentTab === 'all') return alert('请先切换到某个具体平行账户，再修改其实盘起始日');
+      const acc = appData.accounts.find(a => a.id === currentTab);
+      if (!acc) return;
+      const newDate = prompt("修改该账户的实盘起始日期 (格式 YYYY-MM-DD)：", acc.startDate || '2026-01-01');
+      if (newDate) {
+        acc.startDate = newDate;
+        saveData();
+      }
+    }
+
+    function openAccountModal() {
+      document.getElementById('acc-name-input').value = '';
+      document.getElementById('acc-start-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('account-modal').classList.remove('hidden');
+    }
+    function closeAccountModal() { document.getElementById('account-modal').classList.add('hidden'); }
+    
+    function toggleAccountModeInput() {
+      const mode = document.getElementById('acc-mode-select').value;
+      const inputs = document.getElementById('summary-inputs');
+      if (mode === 'summary') inputs.classList.remove('hidden');
+      else inputs.classList.add('hidden');
+    }
+
+    function saveAccount() {
+      const name = document.getElementById('acc-name-input').value.trim();
+      const startDate = document.getElementById('acc-start-date').value;
+      const mode = document.getElementById('acc-mode-select').value;
+      if (!name) return alert('请输入账户名称');
+
+      const p = Number(document.getElementById('acc-summary-principal').value || 0);
+      const a = Number(document.getElementById('acc-summary-asset').value || 0);
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const newAcc = {
+        id: 'acc-' + Date.now(),
+        name: name,
+        startDate: startDate || todayStr,
+        mode: mode,
+        summaryPrincipal: p,
+        summaryAsset: a,
+        targets: [],
+        history: [
+          { id: 'h-' + Date.now(), date: startDate || todayStr, principal: p || 1000, asset: a || 1000 }
+        ]
+      };
+
+      appData.accounts.push(newAcc);
+      saveData();
+      closeAccountModal();
+    }
+
+    function deleteAccount(accId) {
+      if (confirm('确定要删除这个账户吗？')) {
+        appData.accounts = appData.accounts.filter(a => a.id !== accId);
+        if (currentTab === accId) currentTab = 'all';
+        saveData();
+      }
+    }
+
+    // 标的 新增 / 编辑
+    function openTargetModal(accId) {
+      document.getElementById('target-acc-id').value = accId;
+      document.getElementById('target-edit-id').value = '';
+      document.getElementById('target-modal-title').innerText = '添加投资标的';
+      document.getElementById('target-name').value = '';
+      document.getElementById('target-principal').value = '';
+      document.getElementById('target-asset').value = '';
+      document.getElementById('target-modal').classList.remove('hidden');
+    }
+
+    function openEditTargetModal(accId, targetId, name, principal, asset) {
+      document.getElementById('target-acc-id').value = accId;
+      document.getElementById('target-edit-id').value = targetId;
+      document.getElementById('target-modal-title').innerText = '编辑投资标的';
+      document.getElementById('target-name').value = name;
+      document.getElementById('target-principal').value = principal;
+      document.getElementById('target-asset').value = asset;
+      document.getElementById('target-modal').classList.remove('hidden');
+    }
+
+    function closeTargetModal() { document.getElementById('target-modal').classList.add('hidden'); }
+
+    function saveTarget() {
+      const accId = document.getElementById('target-acc-id').value;
+      const editId = document.getElementById('target-edit-id').value;
+      const name = document.getElementById('target-name').value.trim();
+      const principal = Number(document.getElementById('target-principal').value || 0);
+      const asset = Number(document.getElementById('target-asset').value || 0);
+
+      if (!name) return alert('请输入标的名称');
+
+      const acc = appData.accounts.find(a => a.id === accId);
+      if (acc) {
+        if (editId) {
+          // 编辑已有标的
+          const t = acc.targets.find(item => item.id === editId);
+          if (t) {
+            t.name = name;
+            t.principal = principal;
+            t.asset = asset;
+          }
+        } else {
+          // 新增标的
+          acc.targets.push({ id: 't-' + Date.now(), name, principal, asset });
+        }
+        saveData();
+      }
+      closeTargetModal();
+    }
+
+    function deleteTarget(accId, targetId) {
+      const acc = appData.accounts.find(a => a.id === accId);
+      if (acc) {
+        acc.targets = acc.targets.filter(t => t.id !== targetId);
+        saveData();
+      }
+    }
+
+    function openEditSummaryModal(accId, curP, curA) {
+      const p = prompt("修改当前账户总投入本金 (元)：", curP);
+      if (p === null) return;
+      const a = prompt("修改当前账户当前总市值 (元)：", curA);
+      if (a === null) return;
+
+      const acc = appData.accounts.find(a => a.id === accId);
+      if (acc) {
+        acc.summaryPrincipal = Number(p);
+        acc.summaryAsset = Number(a);
+        saveData();
+      }
+    }
+
+    // 历史净值记录弹窗管理
+    function openHistoryModal(accId) {
+      document.getElementById('history-acc-id').value = accId;
+      document.getElementById('history-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('history-principal').value = '';
+      document.getElementById('history-asset').value = '';
+      document.getElementById('history-modal').classList.remove('hidden');
+    }
+    function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
+
+    function saveHistoryRecord() {
+      const accId = document.getElementById('history-acc-id').value;
+      const date = document.getElementById('history-date').value;
+      const principal = Number(document.getElementById('history-principal').value || 0);
+      const asset = Number(document.getElementById('history-asset').value || 0);
+
+      if (!date) return alert('请选择记录日期');
+
+      const acc = appData.accounts.find(a => a.id === accId);
+      if (acc) {
+        if (!acc.history) acc.history = [];
+        acc.history.push({ id: 'h-' + Date.now(), date, principal, asset });
+        saveData();
+      }
+      closeHistoryModal();
+    }
+
+    function deleteHistoryRecord(accId, historyId) {
+      const acc = appData.accounts.find(a => a.id === accId);
+      if (acc && acc.history) {
+        acc.history = acc.history.filter(h => h.id !== historyId);
+        saveData();
+      }
+    }
+
+    // --- 战报卡片图片导出 ---
+    function exportCardImage() {
+      const captureElement = document.getElementById('capture-area');
+      const btn = document.getElementById('export-img-btn');
+      
+      document.querySelectorAll('.no-export').forEach(el => el.style.display = 'none');
+      btn.innerText = '📸 正在生成图片...';
+
+      html2canvas(captureElement, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `定投实盘战报_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        document.querySelectorAll('.no-export').forEach(el => el.style.display = '');
+        btn.innerText = '📸 一键导出实盘战报';
+      }).catch(err => {
+        alert('导出失败，你可以直接使用手机截屏：' + err);
+        document.querySelectorAll('.no-export').forEach(el => el.style.display = '');
+        btn.innerText = '📸 一键导出实盘战报';
+      });
+    }
+  </script>
+<script>
+  // 注册 Service Worker 以支持 PWA 安装与自动更新
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => {
+          console.log('Service Worker 注册成功:', reg.scope);
+          // 检查更新
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  // 新版本已就绪，提示用户或自动刷新
+                  console.log('新版本已就绪，将在下次打开或刷新时生效。');
+                }
+              }
+            };
+          };
+        })
+        .catch(err => console.log('Service Worker 注册失败:', err));
+    });
+  }
+</script>
+</body>
+</html>

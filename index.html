@@ -764,7 +764,7 @@ function drawHistoryChart(canvas, history){
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, w, h);
 
-  const padL = 60, padR = 60, padT = 18, padB = 28;
+  const padL = 52, padR = 52, padT = 18, padB = 28;
   const cw = Math.max(20, w - padL - padR);
   const ch = Math.max(20, h - padT - padB);
 
@@ -791,10 +791,13 @@ function drawHistoryChart(canvas, history){
   points.forEach(p => { leftVals.push(p.principal, p.assets); });
   let minL = Math.min(...leftVals);
   let maxL = Math.max(...leftVals);
-  if(maxL === minL){ if(maxL === 0){ maxL = 1; } else { minL = 0; } }
+  if(maxL === minL){
+    // 所有值相同时：最小值保持不动，上侧加一点空间
+    maxL = minL + (Math.abs(minL) * 0.1 || 1);
+  }
   const spanL = maxL - minL || 1;
-  minL -= spanL * 0.12;
-  maxL += spanL * 0.12;
+  // 左侧金额轴：最小值即数据最小值，不再向下扩展（避免出现负数刻度）；仅向上留白
+  maxL += spanL * 0.06;
 
   const rightVals = points.map(p => p.rate);
   let minR = Math.min(...rightVals, 0);
@@ -1451,10 +1454,11 @@ function drawShareHistory(ctx, x, y, w, h, history){
   points.forEach(p => { leftVals.push(p.principal, p.assets); });
   let minL = Math.min(...leftVals);
   let maxL = Math.max(...leftVals);
-  if(maxL === minL){ if(maxL === 0){ maxL = 1; } else { minL = 0; } }
+  if(maxL === minL){
+    maxL = minL + (Math.abs(minL) * 0.1 || 1);
+  }
   const spanL = maxL - minL || 1;
-  minL -= spanL * 0.12;
-  maxL += spanL * 0.12;
+  maxL += spanL * 0.06;
 
   const rightVals = points.map(p => p.rate);
   let minR = Math.min(...rightVals, 0);

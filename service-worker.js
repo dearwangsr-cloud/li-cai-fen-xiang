@@ -1,59 +1,79 @@
-const CACHE_NAME = 'invest-app-v2';
-const urlsToCache = [
+/* 每次改动 HTML 后，可以把下面这行版本号 +1（可选，但推荐，能及时清旧缓存） */
+const CACHE_VERSION = 'v1.0.0';
+const CACHE_NAME = 'savings-diary-' + CACHE_VERSION;
+
+const PRECACHE = [
+  './',
   './index.html',
   './manifest.json',
-  './icon.svg',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
+  './icon.svg'
 ];
 
-// 安装阶段：缓存核心静态资源
+/* 安装：立即接管 + 预缓存（单个失败不影响整体） */
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.all(PRECACHE.map(url => cache.add(url).catch(() => {})))
+    )
   );
-  self.skipWaiting(); // 跳过等待，立即激活新版本
 });
 
-// 激活阶段：清理旧版本的缓存
+/* 激活：清掉旧版本缓存 + 立即接管所有页面 */
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
-  return self.clients.claim(); // 立即接管所有客户端页面
 });
 
-// 抓取请求：网络优先策略（确保每次获取最新的 HTML 内容，CDN 资源走缓存）
+/* 拦截请求 */
 self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return; // 跨域交给浏览器
+
+  /* 1) 页面导航（HTML）：network-first，保证永远拿最新版本 */
+  const isHTML = req.mode === 'navigate' ||
+                 (req.headers.get('accept') || '').includes('text/html');
+  if (isHTML) {
+    event.respondWith(
+      fetch(req)
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then(r => r || caches.match('./index.html'))
+        )
+    );
+    return;
+  }
+
+  /* 2) 其它静态资源：stale-while-revalidate（先用缓存，后台更新） */
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // 如果网络请求成功，克隆一份存入缓存
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // 网络断开时，从缓存中降级读取
-        return caches.match(event.request);
-      })
+    caches.match(req).then(cached => {
+      const network = fetch(req)
+        .then(res => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || network;
+    })
   );
+});
+
+/* 支持页面主动要求新 SW 立即接管 */
+self.addEventListener('message', event => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });

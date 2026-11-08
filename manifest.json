@@ -1,17 +1,27 @@
 {
-  "name": "定投理财博主实盘战报",
-  "short_name": "实盘战报",
-  "description": "打工人攒钱日记与定投理财数据可视化工具",
-  "start_url": "./index.html",
+  "name": "攒钱日记 · 定投数据看板",
+  "short_name": "攒钱日记",
+  "description": "记录定投理财数据，生成精美统计图表与分享图",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "background_color": "#f4f6fb",
+  "theme_color": "#f4f6fb",
   "icons": [
     {
-      "src": "./icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

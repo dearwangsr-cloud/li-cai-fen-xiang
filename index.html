@@ -1,1039 +1,1705 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>定投理财博主实盘面板</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- html2canvas for 自动导出图片 -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <style>
-    .light-watermark-bg {
-      background-image: radial-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 0);
-      background-size: 24px 24px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6fb">
+<link rel="manifest" href="manifest.json">
+<meta name="description" content="攒钱日记 · 定投理财数据看板">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="攒钱日记">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>攒钱日记 · 定投数据看板</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;background:#f4f6fb;color:#1a1f36;-webkit-font-smoothing:antialiased;min-height:100vh;font-size:15px}
+.page{max-width:520px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 16px calc(44px + env(safe-area-inset-bottom))}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 16px;gap:10px}
+.brand{font-size:19px;font-weight:700;letter-spacing:.3px}
+.brand-sub{font-size:12px;color:#8b93a8;margin-top:2px}
+.btn-ghost{border:none;background:#fff;color:#4f7cff;font-size:14px;font-weight:600;padding:9px 15px;border-radius:12px;box-shadow:0 2px 8px rgba(26,31,54,.06);font-family:inherit;cursor:pointer;flex-shrink:0}
+.btn-ghost:active{opacity:.65}
+.page-title{font-size:15px;font-weight:600;flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero{background:linear-gradient(135deg,#5b8cff 0%,#7b5cff 100%);border-radius:20px;padding:20px 20px 18px;color:#fff;box-shadow:0 12px 30px -8px rgba(91,140,255,.5);margin-bottom:14px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-46px;top:-56px;width:170px;height:170px;background:rgba(255,255,255,.1);border-radius:50%;pointer-events:none}
+.hero-head{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;z-index:1;margin-bottom:2px}
+.hero-label{font-size:12.5px;opacity:.9;letter-spacing:.4px}
+.days-badge{font-size:11.5px;background:rgba(255,255,255,.24);padding:4px 10px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.hero-value{font-size:33px;font-weight:700;margin:5px 0 14px;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.15;position:relative;z-index:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-metrics{display:flex;gap:8px;position:relative;z-index:1}
+.hm{flex:1;background:rgba(255,255,255,.16);border-radius:12px;padding:9px 10px;min-width:0}
+.hm span{display:block;font-size:11px;opacity:.85;margin-bottom:3px}
+.hm b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.hm b.pos{color:#ffe28a}
+.hm b.neg{color:#a8f0d4}
+.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(26,31,54,.05)}
+.card-title{font-size:14.5px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title .sub{font-size:12px;font-weight:400;color:#9aa1b5}
+.card-title.collapsible{cursor:pointer;user-select:none;-webkit-user-select:none;margin-bottom:0}
+.card-title.collapsible .lhs{display:flex;align-items:center;gap:6px}
+.chevron{font-size:12px;color:#9aa1b5;transition:transform .2s;display:inline-block;line-height:1}
+.chevron.open{transform:rotate(180deg)}
+.card-title.collapsible + .collapse-body{margin-top:12px}
+.chart-box{position:relative;width:100%}
+.chart-box canvas{display:block;width:100%}
+.chart-legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:#6b7391;flex-wrap:wrap}
+.chart-legend span{display:flex;align-items:center;gap:5px}
+.chart-legend i{display:inline-block;width:10px;height:3px;border-radius:2px}
+.legend{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.lg-item{display:flex;align-items:center;gap:8px;font-size:13px}
+.lg-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.lg-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#454b63}
+.lg-val{font-variant-numeric:tabular-nums;color:#1a1f36;font-weight:500}
+.lg-pct{width:50px;text-align:right;color:#9aa1b5;font-variant-numeric:tabular-nums;font-size:12.5px}
+.acc-item{display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid #f1f3f9;cursor:pointer}
+.acc-item:last-child{border-bottom:none;padding-bottom:2px}
+.acc-item:active{opacity:.55}
+.acc-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.acc-main{flex:1;min-width:0}
+.acc-name{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-sub{font-size:12px;color:#9aa1b5;margin-top:3px;display:flex;gap:8px;align-items:center}
+.acc-sub .days{color:#8b93a8;background:#f0f2f8;padding:1px 6px;border-radius:6px;font-size:11px}
+.acc-right{text-align:right;flex-shrink:0}
+.acc-amt{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.acc-rate{font-size:12px;margin-top:3px;font-variant-numeric:tabular-nums;font-weight:600}
+.up{color:#f0554f}
+.down{color:#12b886}
+.muted{color:#9aa1b5}
+.empty{text-align:center;padding:34px 20px;color:#9aa1b5;font-size:13.5px;line-height:1.8}
+.hold-item{padding:14px 0;border-bottom:1px solid #f1f3f9}
+.hold-item:last-child{border-bottom:none;padding-bottom:2px}
+.hold-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}
+.hold-name{font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hold-profit{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0}
+.hold-bar{height:6px;border-radius:3px;background:#f0f2f8;overflow:hidden;margin-bottom:8px}
+.hold-bar i{display:block;height:100%;border-radius:3px;transition:width .3s}
+.hold-bottom{display:flex;justify-content:space-between;gap:6px;font-size:11.5px;color:#9aa1b5;font-variant-numeric:tabular-nums}
+.hold-bottom .up{color:#f0554f;font-weight:600}
+.hold-bottom .down{color:#12b886;font-weight:600}
+.note-item{padding:12px 0;border-bottom:1px solid #f1f3f9}
+.note-item:last-child{border-bottom:none;padding-bottom:2px}
+.note-date{font-size:11.5px;color:#9aa1b5;font-weight:600;margin-bottom:5px}
+.note-content{font-size:13.5px;line-height:1.65;color:#454b63;white-space:pre-wrap;word-break:break-word}
+.row{display:flex;align-items:center;gap:9px}
+.inp{width:100%;border:1px solid #e4e8f2;border-radius:10px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfe;color:#1a1f36;outline:none;transition:border-color .15s,background .15s}
+.inp:focus{border-color:#4f7cff;background:#fff}
+textarea.inp{resize:vertical;line-height:1.55}
+.inp-name{font-weight:600;flex:1;min-width:0}
+.btn-del{border:none;background:#fff0f0;color:#f0554f;font-size:12.5px;padding:9px 12px;border-radius:10px;font-family:inherit;cursor:pointer;flex-shrink:0;font-weight:500}
+.btn-del:active{opacity:.6}
+.seg{display:flex;background:#f0f2f8;border-radius:12px;padding:3px;margin:8px 0 4px;gap:3px}
+.seg button{flex:1;border:none;background:transparent;color:#6b7391;font-size:13px;padding:8px 0;border-radius:10px;font-family:inherit;cursor:pointer;font-weight:500}
+.seg button.on{background:#fff;color:#4f7cff;font-weight:600;box-shadow:0 1px 4px rgba(26,31,54,.1)}
+.h-row{border:1px solid #eef1f7;border-radius:13px;padding:11px;margin-bottom:9px;background:#fbfcfe}
+.h-row .row{margin-bottom:9px}
+.h-row .row:last-child{margin-bottom:0}
+.h-nums{display:flex;gap:9px}
+.h-nums label{flex:1;font-size:11.5px;color:#8b93a8;min-width:0}
+.h-nums .inp{margin-top:5px}
+.btn-add{width:100%;border:1.5px dashed #cdd6ee;background:#f8fafe;color:#4f7cff;border-radius:12px;padding:12px;font-size:13.5px;font-family:inherit;cursor:pointer;font-weight:500;margin-top:4px}
+.btn-add:active{opacity:.6}
+.hint{font-size:12.5px;color:#9aa1b5;line-height:1.7;margin:0 0 12px}
+.btn-line{flex:1;border:none;background:#f4f6fb;color:#4f7cff;font-size:13.5px;font-weight:600;padding:12px;border-radius:12px;font-family:inherit;cursor:pointer}
+.btn-line:active{opacity:.6}
+.btn-share{width:100%;border:none;background:linear-gradient(135deg,#5b8cff,#7b5cff);color:#fff;font-size:15px;font-weight:600;padding:15px;border-radius:16px;font-family:inherit;cursor:pointer;box-shadow:0 8px 22px -8px rgba(91,140,255,.7);margin-bottom:14px}
+.btn-share:active{opacity:.8}
+.btn-record{width:100%;border:none;background:#fff;color:#4f7cff;font-size:13.5px;font-weight:600;padding:12px;border-radius:14px;font-family:inherit;cursor:pointer;margin-bottom:14px;box-shadow:0 2px 12px rgba(26,31,54,.06);border:1px solid #e4e8f2}
+.btn-record:active{opacity:.7}
+.color-picker{display:flex;gap:9px;flex-wrap:wrap}
+.color-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #e4e8f2;flex-shrink:0}
+.color-dot.on{box-shadow:0 0 0 2px #4f7cff;transform:scale(1.1)}
+.color-dot:active{opacity:.7}
+.field-label{font-size:12px;color:#8b93a8;margin-bottom:5px;display:block}
+.form-gap{margin-bottom:12px}
+.modal{position:fixed;inset:0;display:none;z-index:100;align-items:center;justify-content:center;padding:18px}
+.modal.show{display:flex}
+.modal-mask{position:absolute;inset:0;background:rgba(15,20,40,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.modal-body{position:relative;background:#fff;border-radius:20px;padding:16px;max-width:430px;width:100%;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.modal-tip{font-size:12.5px;color:#8b93a8;text-align:center;margin-bottom:12px}
+.modal-img-wrap{flex:1;overflow:auto;border-radius:12px;background:#f4f6fb;min-height:0;-webkit-overflow-scrolling:touch}
+.modal-img-wrap img{width:100%;display:block;border-radius:12px}
+.modal-actions{display:flex;gap:10px;margin-top:14px}
+.mbtn{flex:1;text-align:center;padding:13px;border-radius:13px;border:none;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;background:#f0f2f8;color:#454b63;text-decoration:none;display:block}
+.mbtn.primary{background:#4f7cff;color:#fff}
+.mbtn:active{opacity:.7}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased pb-12">
+<body>
+<div id="app"></div>
 
-  <div class="max-w-4xl mx-auto px-4 py-5">
-    <!-- 页头与控制按钮 -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3 border-b border-slate-200 pb-3">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <span>📈</span> 定投理财博主实盘面板
-        </h1>
-        <p class="text-xs text-slate-500 mt-0.5">打工人攒钱日记 · 数据自动化统计与多账户精细化管理</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button id="export-img-btn" onclick="exportCardImage()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm px-3.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 shadow-sm">
-          📸 导出战报图片
-        </button>
-        <button onclick="openAccountModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm px-3.5 py-1.5 rounded-lg font-medium transition shadow-sm">
-          + 新增账户
-        </button>
-      </div>
-    </header>
-
-    <!-- 账户筛选 Tab 导航条 -->
-    <div class="flex items-center justify-between mb-4 overflow-x-auto pb-1" id="account-tabs">
-      <!-- 动态渲染账户 Tab 按钮 -->
-    </div>
-
-    <!-- 主体容器 -->
-    <div class="space-y-5">
-      
-      <!-- 📸 专属截图捕获区域（完美居中与防截断加固） -->
-      <div id="capture-area" class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xl relative overflow-hidden light-watermark-bg">
-        
-        <!-- 头部信息：严格垂直居中对齐 -->
-        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
-              💰
-            </div>
-            <div class="flex flex-col justify-center">
-              <div class="font-bold text-slate-900 text-base flex items-center gap-2 leading-tight">
-                <span id="display-blogger-name">打工人攒钱日记</span>
-                <span class="text-xs text-indigo-600 font-semibold" id="current-view-tag">· 全局总览</span>
-                <button onclick="editBloggerName()" class="text-xs text-slate-400 hover:text-indigo-600 no-export" title="修改博主名称">✏️</button>
-              </div>
-              <div class="text-[11px] text-slate-400 mt-1" id="current-date-text">更新时间：2026.11.8</div>
-            </div>
-          </div>
-
-          <!-- 实盘天数徽章：采用 flex items-center 确保在任何设备上完美垂直居中 -->
-          <div class="flex items-center gap-2 shrink-0">
-            <div class="bg-indigo-50 text-indigo-600 border border-indigo-200/60 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 leading-none">
-              <span>🗓️</span><span>实盘第 <span id="days-count">312</span> 天</span>
-            </div>
-            <button id="edit-start-date-btn" onclick="editAccountStartDate()" class="text-[11px] text-slate-500 hover:text-indigo-600 no-export bg-slate-50 border border-slate-200 px-2 py-1.5 rounded-md leading-none" style="display:none;" title="修改起始日期">改日期</button>
-          </div>
-        </div>
-
-        <!-- 4大核心数据网格：扩大宽度和内边距，彻底解决数字显示不全和截断问题 -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-6">
-          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
-            <div class="text-xs text-slate-500 mb-1.5 font-medium">累计投入本金</div>
-            <div class="text-lg font-black text-slate-900 tracking-tight" id="total-principal">¥ 0</div>
-          </div>
-          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
-            <div class="text-xs text-slate-500 mb-1.5 font-medium">当前资产总值</div>
-            <div class="text-lg font-black text-indigo-600 tracking-tight" id="total-asset">¥ 0</div>
-          </div>
-          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
-            <div class="text-xs text-slate-500 mb-1.5 font-medium">持仓累计收益</div>
-            <div class="text-lg font-black tracking-tight" id="total-profit">¥ 0</div>
-          </div>
-          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
-            <div class="text-xs text-slate-500 mb-1.5 font-medium">整体收益率</div>
-            <div class="text-lg font-black tracking-tight" id="total-rate">0.00%</div>
-          </div>
-        </div>
-
-        <!-- 统计图表区 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1" id="charts-container">
-          <!-- 动态渲染图表1 -->
-          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
-              <span>📊</span> <span id="chart1-title">全局标的分散度 / 占比</span>
-            </h3>
-            <div class="h-48 relative flex items-center justify-center">
-              <canvas id="chart1"></canvas>
-            </div>
-          </div>
-          <!-- 动态渲染图表2 -->
-          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
-              <span>📉</span> <span id="chart2-title">各标的盈亏对比 (元)</span>
-            </h3>
-            <div class="h-48 relative">
-              <canvas id="chart2"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 当前选中账户的详细持仓清单 / 历史净值记录管理（独立于截图区之外） -->
-      <div id="account-details-container" class="space-y-4">
-        <!-- 由 JS 动态渲染 -->
-      </div>
+<div class="modal" id="modal">
+  <div class="modal-mask" data-act="close-modal"></div>
+  <div class="modal-body">
+    <div class="modal-tip">长按图片可保存到相册</div>
+    <div class="modal-img-wrap"><img id="shareImg" alt="分享图"></div>
+    <div class="modal-actions">
+      <a id="dlBtn" class="mbtn primary" download="share.png">下载图片</a>
+      <button class="mbtn" data-act="close-modal">关闭</button>
     </div>
   </div>
+</div>
 
-  <!-- 弹窗：新增/编辑账户 -->
-  <div id="account-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-900">新增投资账户</h3>
-      <div>
-        <label class="block text-xs text-slate-600 mb-1">账户名称</label>
-        <input type="text" id="acc-name-input" placeholder="例如：养老定投账户、稳健理财账户" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-      </div>
-      <div>
-        <label class="block text-xs text-slate-600 mb-1">实盘起始日期（用于计算实盘天数）</label>
-        <input type="date" id="acc-start-date" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-      </div>
-      <div>
-        <label class="block text-xs text-slate-600 mb-1">账户模式选择</label>
-        <select id="acc-mode-select" onchange="toggleAccountModeInput()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-          <option value="detailed">明细模式（逐个录入持仓标的，自动汇总）</option>
-          <option value="summary">极简总览模式（直接录入账户总本金与市值，支持历史双轴曲线）</option>
-        </select>
-      </div>
-
-      <!-- 仅在极简模式下显示的初始输入框 -->
-      <div id="summary-inputs" class="hidden space-y-3 pt-2 border-t border-slate-200">
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">当前总投入本金 (元)</label>
-          <input type="number" id="acc-summary-principal" placeholder="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">当前总市值 (元)</label>
-          <input type="number" id="acc-summary-asset" placeholder="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none">
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeAccountModal()" class="px-4 py-2 text-xs text-slate-500 hover:text-slate-800">取消</button>
-        <button onclick="saveAccount()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm">保存账户</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 弹窗：新增/编辑标的 -->
-  <div id="target-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-900" id="target-modal-title">添加投资标的</h3>
-      <input type="hidden" id="target-acc-id">
-      <input type="hidden" id="target-edit-id">
-      <div>
-        <label class="block text-xs text-slate-600 mb-1">标的名称</label>
-        <input type="text" id="target-name" placeholder="例如：创业板指数基金 / 纳斯达克 ETF" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">累计本金 (元)</label>
-          <input type="number" id="target-principal" placeholder="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">当前市值 (元)</label>
-          <input type="number" id="target-asset" placeholder="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeTargetModal()" class="px-4 py-2 text-xs text-slate-500 hover:text-slate-800">取消</button>
-        <button onclick="saveTarget()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm">保存标的</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 弹窗：添加历史净值记录点 -->
-  <div id="history-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-900">记录历史净值数据</h3>
-      <input type="hidden" id="history-acc-id">
-      <div>
-        <label class="block text-xs text-slate-600 mb-1">记录日期</label>
-        <input type="date" id="history-date" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">当时总本金 (元)</label>
-          <input type="number" id="history-principal" placeholder="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">当时总市值 (元)</label>
-          <input type="number" id="history-asset" placeholder="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-600">
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeHistoryModal()" class="px-4 py-2 text-xs text-slate-500 hover:text-slate-800">取消</button>
-        <button onclick="saveHistoryRecord()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm">保存记录</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // --- 核心数据结构与初始样例 ---
-    const STORAGE_KEY = 'invest_dashboard_data_v6';
-    
-    let defaultData = {
-      bloggerName: "打工人攒钱日记",
-      accounts: [
-        {
-          id: 'acc-1',
-          name: '养老定投账户',
-          startDate: '2026-01-01',
-          mode: 'detailed',
-          summaryPrincipal: 0,
-          summaryAsset: 0,
-          targets: [
-            { id: 't-1', name: '创业板指数基金', principal: 15000, asset: 16800 },
-            { id: 't-2', name: '中证红利指数基金', principal: 20000, asset: 21500 }
-          ],
-          history: [
-            { id: 'h-1', date: '2026-01-01', principal: 10000, asset: 10100 },
-            { id: 'h-2', date: '2026-02-01', principal: 22000, asset: 23500 },
-            { id: 'h-3', date: '2026-03-01', principal: 35000, asset: 38300 }
-          ]
-        },
-        {
-          id: 'acc-2',
-          name: '稳健理财总览',
-          startDate: '2026-02-01',
-          mode: 'summary',
-          summaryPrincipal: 10000,
-          summaryAsset: 11200,
-          targets: [],
-          history: [
-            { id: 'h-201', date: '2026-02-01', principal: 5000, asset: 5050 },
-            { id: 'h-202', date: '2026-03-01', principal: 10000, asset: 11200 }
-          ]
-        }
-      ]
-    };
-
-    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData;
-
-    let chart1Instance = null;
-    let chart2Instance = null;
-    let currentTab = 'all';
-
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('current-date-text').innerText = `更新时间：${new Date().toLocaleDateString('zh-CN').replace(/\//g, '.')}`;
-      renderApp();
-    });
-
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-      renderApp();
-    }
-
-    function renderApp() {
-      document.getElementById('display-blogger-name').innerText = appData.bloggerName;
-      renderTabs();
-      calculateAndRenderActiveData();
-      renderAccountsDetail();
-    }
-
-    function calculateDays(startDateStr) {
-      if (!startDateStr) return 1;
-      const start = new Date(startDateStr);
-      const today = new Date();
-      start.setHours(0,0,0,0);
-      today.setHours(0,0,0,0);
-      const diffTime = today - start;
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      return diffDays > 0 ? diffDays : 1;
-    }
-
-    function formatMoney(val) {
-      return '¥ ' + Math.round(Number(val) || 0).toLocaleString('zh-CN');
-    }
-
-    function calculateAndRenderActiveData() {
-      let totalPrincipal = 0;
-      let totalAsset = 0;
-      let targetList = [];
-      let activeStartDate = '2026-01-01';
-
-      if (currentTab === 'all') {
-        document.getElementById('current-view-tag').innerText = '· 全局总览';
-        document.getElementById('edit-start-date-btn').style.display = 'none';
-
-        let earliestDate = null;
-        appData.accounts.forEach(acc => {
-          if (acc.startDate) {
-            if (!earliestDate || new Date(acc.startDate) < new Date(earliestDate)) {
-              earliestDate = acc.startDate;
-            }
-          }
-          if (acc.mode === 'summary') {
-            totalPrincipal += Number(acc.summaryPrincipal || 0);
-            totalAsset += Number(acc.summaryAsset || 0);
-            targetList.push({
-              name: `${acc.name} (总览)`,
-              principal: Number(acc.summaryPrincipal || 0),
-              asset: Number(acc.summaryAsset || 0)
-            });
-          } else {
-            acc.targets.forEach(t => {
-              totalPrincipal += Number(t.principal || 0);
-              totalAsset += Number(t.asset || 0);
-              targetList.push({
-                name: t.name,
-                principal: Number(t.principal || 0),
-                asset: Number(t.asset || 0)
-              });
-            });
-          }
-        });
-        activeStartDate = earliestDate || '2026-01-01';
-        document.getElementById('days-count').innerText = calculateDays(activeStartDate);
-
-        renderGlobalCharts(targetList);
-
-      } else {
-        const acc = appData.accounts.find(a => a.id === currentTab);
-        if (!acc) return;
-
-        document.getElementById('current-view-tag').innerText = `· ${acc.name}`;
-        document.getElementById('edit-start-date-btn').style.display = 'inline-block';
-
-        activeStartDate = acc.startDate || '2026-01-01';
-        document.getElementById('days-count').innerText = calculateDays(activeStartDate);
-
-        if (acc.mode === 'summary') {
-          totalPrincipal = Number(acc.summaryPrincipal || 0);
-          totalAsset = Number(acc.summaryAsset || 0);
-        } else {
-          acc.targets.forEach(t => {
-            totalPrincipal += Number(t.principal || 0);
-            totalAsset += Number(t.asset || 0);
-          });
-        }
-
-        renderAccountSpecificCharts(acc);
-      }
-
-      const totalProfit = totalAsset - totalPrincipal;
-      const totalRate = totalPrincipal > 0 ? (totalProfit / totalPrincipal) * 100 : 0;
-
-      document.getElementById('total-principal').innerText = formatMoney(totalPrincipal);
-      document.getElementById('total-asset').innerText = formatMoney(totalAsset);
-      
-      const profitEl = document.getElementById('total-profit');
-      const rateEl = document.getElementById('total-rate');
-      
-      profitEl.innerText = `${totalProfit >= 0 ? '+' : ''}${formatMoney(totalProfit)}`;
-      rateEl.innerText = `${totalRate >= 0 ? '+' : ''}${totalRate.toFixed(2)}%`;
-
-      const isPositive = totalProfit >= 0;
-      profitEl.className = `text-lg font-black tracking-tight truncate ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
-      rateEl.className = `text-lg font-black tracking-tight truncate ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
-    }
-
-    function renderGlobalCharts(targetList) {
-      document.getElementById('chart1-title').innerText = '全局标的分散度 / 占比';
-      document.getElementById('chart2-title').innerText = '各标的盈亏对比 (元)';
-
-      const labels = targetList.map(t => t.name);
-      const assetData = targetList.map(t => t.asset);
-      const profitData = targetList.map(t => t.asset - t.principal);
-      const profitColors = profitData.map(p => p >= 0 ? '#fb7185' : '#34d399'); 
-
-      const ctx1 = document.getElementById('chart1').getContext('2d');
-      if (chart1Instance) chart1Instance.destroy();
-      chart1Instance = new Chart(ctx1, {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: assetData,
-            backgroundColor: ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
-            borderWidth: 2,
-            borderColor: '#ffffff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                boxWidth: 8,
-                font: { size: 9, weight: '500' },
-                color: '#475569',
-                generateLabels: function(chart) {
-                  const data = chart.data;
-                  if (data.labels.length && data.datasets.length) {
-                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                    return data.labels.map((label, i) => {
-                      const value = data.datasets[0].data[i];
-                      const pct = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
-                      return {
-                        text: `${label}: ¥${Math.round(value).toLocaleString()} (${pct})`,
-                        fillStyle: data.datasets[0].backgroundColor[i],
-                        hidden: false,
-                        index: i
-                      };
-                    });
-                  }
-                  return [];
-                }
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const val = context.raw || 0;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                  return ` 市值: ¥${Math.round(val).toLocaleString()} (${pct}%)`;
-                }
-              }
-            }
-          }
-        }
-      });
-
-      const ctx2 = document.getElementById('chart2').getContext('2d');
-      if (chart2Instance) chart2Instance.destroy();
-      chart2Instance = new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: profitData,
-            backgroundColor: profitColors,
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const val = context.raw || 0;
-                  return ` 盈亏: ${val >= 0 ? '+' : ''}¥${Math.round(val).toLocaleString()}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } },
-            y: { 
-              ticks: { 
-                color: '#475569', 
-                font: { size: 9 },
-                callback: function(value) { return Math.round(value); }
-              }, 
-              grid: { color: '#f1f5f9' } 
-            }
-          }
-        }
-      });
-    }
-
-    function renderAccountSpecificCharts(acc) {
-      const container = document.getElementById('charts-container');
-      
-      let historyData = acc.history || [];
-      historyData.sort((a,b) => new Date(a.date) - new Date(b.date));
-
-      const hLabels = historyData.map(h => h.date);
-      const hPrincipal = historyData.map(h => h.principal);
-      const hAsset = historyData.map(h => h.asset);
-      const hRates = historyData.map(h => h.principal > 0 ? Number(((h.asset - h.principal) / h.principal * 100).toFixed(2)) : 0);
-
-      // 严格要求：图表标题仅显示 账户名-历史数据
-      const chartTitleText = `${acc.name}-历史数据`;
-
-      if (acc.mode === 'summary') {
-        container.innerHTML = `
-          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm md:col-span-2">
-            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
-              <span>📈</span> <span>${chartTitleText}</span>
-            </h3>
-            <div class="h-56 relative">
-              <canvas id="historyDualChart"></canvas>
-            </div>
-          </div>
-        `;
-        renderDualAxisLineChart('historyDualChart', hLabels, hPrincipal, hAsset, hRates);
-      } else {
-        container.innerHTML = `
-          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
-              <span>📊</span> <span>${acc.name} - 标的占比</span>
-            </h3>
-            <div class="h-48 relative flex items-center justify-center">
-              <canvas id="accPieChart"></canvas>
-            </div>
-          </div>
-          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
-              <span>📈</span> <span>${chartTitleText}</span>
-            </h3>
-            <div class="h-48 relative">
-              <canvas id="accDualChart"></canvas>
-            </div>
-          </div>
-        `;
-
-        const targetLabels = acc.targets.map(t => t.name);
-        const targetAssets = acc.targets.map(t => t.asset);
-        const ctxPie = document.getElementById('accPieChart').getContext('2d');
-        if (chart1Instance) chart1Instance.destroy();
-        chart1Instance = new Chart(ctxPie, {
-          type: 'doughnut',
-          data: {
-            labels: targetLabels,
-            datasets: [{
-              data: targetAssets,
-              backgroundColor: ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'],
-              borderWidth: 2,
-              borderColor: '#ffffff'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: {
-                  boxWidth: 8,
-                  font: { size: 9, weight: '500' },
-                  color: '#475569',
-                  generateLabels: function(chart) {
-                    const data = chart.data;
-                    if (data.labels.length && data.datasets.length) {
-                      const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                      return data.labels.map((label, i) => {
-                        const value = data.datasets[0].data[i];
-                        const pct = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
-                        return {
-                          text: `${label}: ¥${Math.round(value).toLocaleString()} (${pct})`,
-                          fillStyle: data.datasets[0].backgroundColor[i],
-                          hidden: false,
-                          index: i
-                        };
-                      });
-                    }
-                    return [];
-                  }
-                }
-              }
-            }
-          }
-        });
-
-        renderDualAxisLineChart('accDualChart', hLabels, hPrincipal, hAsset, hRates);
-      }
-    }
-
-    function renderDualAxisLineChart(canvasId, labels, principalData, assetData, rateData) {
-      const ctx = document.getElementById(canvasId).getContext('2d');
-      if (chart2Instance) chart2Instance.destroy();
-
-      chart2Instance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: '当前市值',
-              data: assetData,
-              borderColor: '#6366f1',
-              backgroundColor: 'rgba(99, 102, 241, 0.06)',
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 4,
-              borderWidth: 2,
-              yAxisID: 'y'
-            },
-            {
-              label: '累计本金',
-              data: principalData,
-              borderColor: '#94a3b8',
-              backgroundColor: 'transparent',
-              borderDash: [4, 4],
-              tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 3,
-              borderWidth: 1.5,
-              yAxisID: 'y'
-            },
-            {
-              label: '收益率(%)',
-              data: rateData,
-              borderColor: '#fb7185',
-              backgroundColor: 'transparent',
-              tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 4,
-              borderWidth: 2,
-              yAxisID: 'y1'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top', labels: { color: '#475569', boxWidth: 8, font: { size: 9 } } },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              callbacks: {
-                label: function(context) {
-                  const label = context.dataset.label || '';
-                  const val = context.raw;
-                  if (label.includes('收益率')) {
-                    return ` ${label}: ${val >= 0 ? '+' : ''}${val}%`;
-                  }
-                  return ` ${label}: ¥${Math.round(val).toLocaleString()}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: {
-                color: '#64748b',
-                font: { size: 9 },
-                callback: function(val, index) {
-                  const len = labels.length;
-                  if (len <= 3) return this.getLabelForValue(val);
-                  const midIndex = Math.floor(len / 2);
-                  if (index === 0 || index === midIndex || index === len - 1) {
-                    return this.getLabelForValue(val);
-                  }
-                  return '';
-                },
-                maxRotation: 0
-              },
-              grid: { display: false }
-            },
-            y: {
-              type: 'linear',
-              display: true,
-              position: 'left',
-              ticks: { 
-                color: '#64748b', 
-                font: { size: 9 },
-                callback: function(value) { return Math.round(value); }
-              },
-              grid: { color: '#f1f5f9' }
-            },
-            y1: {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              ticks: { 
-                color: '#fb7185', 
-                font: { size: 9 },
-                callback: function(value) { return value + '%'; }
-              },
-              grid: { drawOnChartArea: false }
-            }
-          }
-        }
-      });
-    }
-
-    function renderTabs() {
-      const container = document.getElementById('account-tabs');
-      let html = `<button onclick="switchTab('all')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm ${currentTab === 'all' ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">📁 全部汇总</button>`;
-      
-      appData.accounts.forEach(acc => {
-        html += `<button onclick="switchTab('${acc.id}')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm ${currentTab === acc.id ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">💼 ${acc.name}</button>`;
-      });
-      container.innerHTML = html;
-    }
-
-    function switchTab(tabId) {
-      currentTab = tabId;
-      renderTabs();
-      calculateAndRenderActiveData();
-      renderAccountsDetail();
-    }
-
-    function renderAccountsDetail() {
-      const container = document.getElementById('account-details-container');
-      container.innerHTML = '';
-
-      const list = currentTab === 'all' ? appData.accounts : appData.accounts.filter(a => a.id === currentTab);
-
-      list.forEach(acc => {
-        let accPrincipal = 0;
-        let accAsset = 0;
-
-        if (acc.mode === 'summary') {
-          accPrincipal = Number(acc.summaryPrincipal || 0);
-          accAsset = Number(acc.summaryAsset || 0);
-        } else {
-          acc.targets.forEach(t => {
-            accPrincipal += Number(t.principal || 0);
-            accAsset += Number(t.asset || 0);
-          });
-        }
-
-        const accProfit = accAsset - accPrincipal;
-        const accRate = accPrincipal > 0 ? (accProfit / accPrincipal) * 100 : 0;
-        const isPositive = accProfit >= 0;
-        const accDays = calculateDays(acc.startDate);
-
-        let cardHtml = `
-          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-slate-900 text-sm">${acc.name}</span>
-                <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">实盘 ${accDays} 天</span>
-                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-500">${acc.mode === 'summary' ? '总览/曲线模式' : '明细模式'}</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="text-right">
-                  <span class="text-xs ${isPositive ? 'text-rose-500' : 'text-emerald-600'} font-bold">
-                    ${accProfit >= 0 ? '+' : ''}${Math.round(accProfit).toLocaleString()}元 (${accRate.toFixed(2)}%)
-                  </span>
-                </div>
-                <button onclick="deleteAccount('${acc.id}')" class="text-xs text-slate-400 hover:text-rose-600 no-export" title="删除账户">🗑️</button>
-              </div>
-            </div>
-        `;
-
-        if (acc.mode === 'detailed') {
-          cardHtml += `
-            <div class="space-y-2 mb-3">
-              ${acc.targets.map(t => {
-                const p = t.asset - t.principal;
-                const r = t.principal > 0 ? (p / t.principal) * 100 : 0;
-                return `
-                  <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-lg flex justify-between items-center text-xs">
-                    <div>
-                      <div class="font-semibold text-slate-700">${t.name}</div>
-                      <div class="text-[10px] text-slate-400">本金: ¥${Math.round(t.principal).toLocaleString()} | 市值: ¥${Math.round(t.asset).toLocaleString()}</div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="font-bold ${p >= 0 ? 'text-rose-500' : 'text-emerald-600'}">
-                        ${p >= 0 ? '+' : ''}${Math.round(p).toLocaleString()} (${r.toFixed(1)}%)
-                      </span>
-                      <div class="flex items-center gap-1.5 no-export">
-                        <button onclick="openEditTargetModal('${acc.id}', '${t.id}', '${t.name}', ${t.principal}, ${t.asset})" class="text-slate-400 hover:text-indigo-600" title="编辑标">✏️</button>
-                        <button onclick="deleteTarget('${acc.id}', '${t.id}')" class="text-slate-400 hover:text-rose-600" title="删除标">✕</button>
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-            <button onclick="openTargetModal('${acc.id}')" class="w-full py-2 border border-dashed border-slate-300 rounded-lg text-xs text-slate-500 hover:text-indigo-600 hover:border-indigo-400 transition font-medium no-export mb-3">
-              + 添加持仓标的
-            </button>
-          `;
-        } else {
-          cardHtml += `
-            <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-lg flex justify-between items-center text-xs mb-3 no-export">
-              <span class="text-slate-500">当前总投入: <b>${formatMoney(accPrincipal)}</b> | 当前总市值: <b>${formatMoney(accAsset)}</b></span>
-              <button onclick="openEditSummaryModal('${acc.id}', ${accPrincipal}, ${accAsset})" class="text-indigo-600 hover:underline font-medium">修改当前数据</button>
-            </div>
-          `;
-        }
-
-        cardHtml += `
-          <div class="border-t border-slate-100 pt-2.5 mt-1">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-xs font-bold text-slate-700">📅 历史数据点记录 (${(acc.history || []).length})</span>
-              <button onclick="openHistoryModal('${acc.id}')" class="text-xs text-indigo-600 hover:underline font-medium no-export">+ 添加历史数据</button>
-            </div>
-            <div class="flex flex-wrap gap-1.5">
-              ${(acc.history || []).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(h => `
-                <span class="bg-slate-100 border border-slate-200 text-slate-600 text-[10px] px-2 py-1 rounded-md flex items-center gap-1">
-                  <b>${h.date}</b> (本:¥${Math.round(h.principal).toLocaleString()}, 市:¥${Math.round(h.asset).toLocaleString()})
-                  <button onclick="deleteHistoryRecord('${acc.id}', '${h.id}')" class="text-slate-400 hover:text-rose-600 no-export ml-1">×</button>
-                </span>
-              `).join('')}
-            </div>
-          </div>
-        `;
-
-        cardHtml += `</div>`;
-        container.innerHTML += cardHtml;
-      });
-    }
-
-    // --- 互动操作逻辑 ---
-    function editBloggerName() {
-      const name = prompt("请输入你的公众号名称：", appData.bloggerName);
-      if (name) {
-        appData.bloggerName = name;
-        saveData();
-      }
-    }
-
-    function editAccountStartDate() {
-      if (currentTab === 'all') return alert('请先切换到某个具体平行账户，再修改其实盘起始日');
-      const acc = appData.accounts.find(a => a.id === currentTab);
-      if (!acc) return;
-      const newDate = prompt("修改该账户的实盘起始日期 (格式 YYYY-MM-DD)：", acc.startDate || '2026-01-01');
-      if (newDate) {
-        acc.startDate = newDate;
-        saveData();
-      }
-    }
-
-    function openAccountModal() {
-      document.getElementById('acc-name-input').value = '';
-      document.getElementById('acc-start-date').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('account-modal').classList.remove('hidden');
-    }
-    function closeAccountModal() { document.getElementById('account-modal').classList.add('hidden'); }
-    
-    function toggleAccountModeInput() {
-      const mode = document.getElementById('acc-mode-select').value;
-      const inputs = document.getElementById('summary-inputs');
-      if (mode === 'summary') inputs.classList.remove('hidden');
-      else inputs.classList.add('hidden');
-    }
-
-    function saveAccount() {
-      const name = document.getElementById('acc-name-input').value.trim();
-      const startDate = document.getElementById('acc-start-date').value;
-      const mode = document.getElementById('acc-mode-select').value;
-      if (!name) return alert('请输入账户名称');
-
-      const p = Number(document.getElementById('acc-summary-principal').value || 0);
-      const a = Number(document.getElementById('acc-summary-asset').value || 0);
-      const todayStr = new Date().toISOString().slice(0, 10);
-
-      const newAcc = {
-        id: 'acc-' + Date.now(),
-        name: name,
-        startDate: startDate || todayStr,
-        mode: mode,
-        summaryPrincipal: p,
-        summaryAsset: a,
-        targets: [],
-        history: [
-          { id: 'h-' + Date.now(), date: startDate || todayStr, principal: p || 1000, asset: a || 1000 }
-        ]
-      };
-
-      appData.accounts.push(newAcc);
-      saveData();
-      closeAccountModal();
-    }
-
-    function deleteAccount(accId) {
-      if (confirm('确定要删除这个账户吗？')) {
-        appData.accounts = appData.accounts.filter(a => a.id !== accId);
-        if (currentTab === accId) currentTab = 'all';
-        saveData();
-      }
-    }
-
-    function openTargetModal(accId) {
-      document.getElementById('target-acc-id').value = accId;
-      document.getElementById('target-edit-id').value = '';
-      document.getElementById('target-modal-title').innerText = '添加投资标的';
-      document.getElementById('target-name').value = '';
-      document.getElementById('target-principal').value = '';
-      document.getElementById('target-asset').value = '';
-      document.getElementById('target-modal').classList.remove('hidden');
-    }
-
-    function openEditTargetModal(accId, targetId, name, principal, asset) {
-      document.getElementById('target-acc-id').value = accId;
-      document.getElementById('target-edit-id').value = targetId;
-      document.getElementById('target-modal-title').innerText = '编辑投资标的';
-      document.getElementById('target-name').value = name;
-      document.getElementById('target-principal').value = principal;
-      document.getElementById('target-asset').value = asset;
-      document.getElementById('target-modal').classList.remove('hidden');
-    }
-
-    function closeTargetModal() { document.getElementById('target-modal').classList.add('hidden'); }
-
-    function saveTarget() {
-      const accId = document.getElementById('target-acc-id').value;
-      const editId = document.getElementById('target-edit-id').value;
-      const name = document.getElementById('target-name').value.trim();
-      const principal = Number(document.getElementById('target-principal').value || 0);
-      const asset = Number(document.getElementById('target-asset').value || 0);
-
-      if (!name) return alert('请输入标的名称');
-
-      const acc = appData.accounts.find(a => a.id === accId);
-      if (acc) {
-        if (editId) {
-          const t = acc.targets.find(item => item.id === editId);
-          if (t) {
-            t.name = name;
-            t.principal = principal;
-            t.asset = asset;
-          }
-        } else {
-          acc.targets.push({ id: 't-' + Date.now(), name, principal, asset });
-        }
-        saveData();
-      }
-      closeTargetModal();
-    }
-
-    function deleteTarget(accId, targetId) {
-      const acc = appData.accounts.find(a => a.id === accId);
-      if (acc) {
-        acc.targets = acc.targets.filter(t => t.id !== targetId);
-        saveData();
-      }
-    }
-
-    function openEditSummaryModal(accId, curP, curA) {
-      const p = prompt("修改当前账户总投入本金 (元)：", curP);
-      if (p === null) return;
-      const a = prompt("修改当前账户当前总市值 (元)：", curA);
-      if (a === null) return;
-
-      const acc = appData.accounts.find(a => a.id === accId);
-      if (acc) {
-        acc.summaryPrincipal = Number(p);
-        acc.summaryAsset = Number(a);
-        saveData();
-      }
-    }
-
-    function openHistoryModal(accId) {
-      document.getElementById('history-acc-id').value = accId;
-      document.getElementById('history-date').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('history-principal').value = '';
-      document.getElementById('history-asset').value = '';
-      document.getElementById('history-modal').classList.remove('hidden');
-    }
-    function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
-
-    function saveHistoryRecord() {
-      const accId = document.getElementById('history-acc-id').value;
-      const date = document.getElementById('history-date').value;
-      const principal = Number(document.getElementById('history-principal').value || 0);
-      const asset = Number(document.getElementById('history-asset').value || 0);
-
-      if (!date) return alert('请选择记录日期');
-
-      const acc = appData.accounts.find(a => a.id === accId);
-      if (acc) {
-        if (!acc.history) acc.history = [];
-        acc.history.push({ id: 'h-' + Date.now(), date, principal, asset });
-        saveData();
-      }
-      closeHistoryModal();
-    }
-
-    function deleteHistoryRecord(accId, historyId) {
-      const acc = appData.accounts.find(a => a.id === accId);
-      if (acc && acc.history) {
-        acc.history = acc.history.filter(h => h.id !== historyId);
-        saveData();
-      }
-    }
-
-    function exportCardImage() {
-      const captureElement = document.getElementById('capture-area');
-      const btn = document.getElementById('export-img-btn');
-      
-      document.querySelectorAll('.no-export').forEach(el => el.style.display = 'none');
-      btn.innerText = '📸 生成中...';
-
-      html2canvas(captureElement, {
-        backgroundColor: '#ffffff',
-        scale: 2
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `定投实盘战报_${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-
-        document.querySelectorAll('.no-export').forEach(el => el.style.display = '');
-        btn.innerText = '📸 导出战报图片';
-      }).catch(err => {
-        alert('导出失败，你可以直接使用手机截屏：' + err);
-        document.querySelectorAll('.no-export').forEach(el => el.style.display = '');
-        btn.innerText = '📸 导出战报图片';
-      });
-    }
-  </script>
 <script>
-  // 注册 Service Worker 以支持 PWA 安装与自动更新
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js')
-        .then(reg => {
-          console.log('Service Worker 注册成功:', reg.scope);
-          // 检查更新
-          reg.onupdatefound = () => {
-            const installingWorker = reg.installing;
-            installingWorker.onstatechange = () => {
-              if (installingWorker.state === 'installed') {
-                if (navigator.serviceWorker.controller) {
-                  // 新版本已就绪，提示用户或自动刷新
-                  console.log('新版本已就绪，将在下次打开或刷新时生效。');
-                }
-              }
-            };
-          };
-        })
-        .catch(err => console.log('Service Worker 注册失败:', err));
+/* ============ 常量 & 工具 ============ */
+const STORAGE_KEY = 'savings_diary_v1';
+const PALETTE = ['#4f7cff','#f0554f','#12b886','#f7a942','#9b5de5','#00b8d9','#ff7ab6','#7a869a'];
+const UP = '#f0554f';
+const DOWN = '#12b886';
+const FONT = '-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function num(v){ const n = parseFloat(v); return isFinite(n) ? n : 0; }
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtMoney(n){
+  if(!isFinite(n)) n = 0;
+  return n.toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtSigned(n){
+  if(!isFinite(n)) n = 0;
+  return (n > 0 ? '+' : '') + fmtMoney(n);
+}
+function fmtRate(r){
+  if(!isFinite(r)) r = 0;
+  return (r > 0 ? '+' : '') + r.toFixed(2) + '%';
+}
+function shortMoney(n){
+  const abs = Math.abs(n);
+  if(abs >= 1e8) return (n/1e8).toFixed(2) + '亿';
+  if(abs >= 1e4) return (n/1e4).toFixed(2) + '万';
+  return n.toFixed(2);
+}
+function shortSigned(n){ return (n > 0 ? '+' : '') + shortMoney(n); }
+function formatDate(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+function todayStr(){ return formatDate(new Date()); }
+function calcDays(startDate){
+  if(!startDate) return 0;
+  const s = new Date(startDate + 'T00:00:00');
+  if(isNaN(s.getTime())) return 0;
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const diff = Math.floor((now - s) / 86400000) + 1;
+  return diff >= 1 ? diff : 0;
+}
+function roundRect(ctx, x, y, w, h, r){
+  r = Math.min(r, Math.abs(h)/2, Math.abs(w)/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+function fitText(ctx, text, maxWidth){
+  text = String(text == null ? '' : text);
+  if(ctx.measureText(text).width <= maxWidth) return text;
+  let t = text;
+  while(t.length > 1 && ctx.measureText(t + '…').width > maxWidth) t = t.slice(0, -1);
+  return t + '…';
+}
+/* 分享图标的聚合：超过 maxCount 时，前 maxCount-1 个 + “其他” */
+function aggregateForShare(items, maxCount){
+  if(!items || items.length <= maxCount) return items;
+  const sorted = items.slice().sort((a, b) => b.value - a.value);
+  const top = sorted.slice(0, maxCount - 1);
+  const rest = sorted.slice(maxCount - 1);
+  const restSum = rest.reduce((s, i) => s + i.value, 0);
+  top.push({ label: '其他（' + rest.length + ' 项）', value: restSum, color: '#c7cdd9' });
+  return top;
+}
+
+/* ============ 状态 ============ */
+function newAccount(name){
+  return {
+    id: uid(), name: name || '新账户',
+    color: PALETTE[state.accounts.length % PALETTE.length],
+    mode: 'simple', startDate: todayStr(),
+    principal: 0, assets: 0,
+    holdings: [], history: [], notes: []
+  };
+}
+
+function seedState(){
+  return {
+    accounts: [
+      {
+        id: uid(), name: '养老定投账户', color: PALETTE[0], mode: 'detail',
+        startDate: (() => { const d = new Date(); d.setDate(d.getDate() - 365); return formatDate(d); })(),
+        principal: 0, assets: 0,
+        holdings: [
+          { id: uid(), name: '创业板指数基金', principal: 24000, assets: 26400, color: PALETTE[0] },
+          { id: uid(), name: '中证红利指数基金', principal: 36000, assets: 38520, color: PALETTE[1] }
+        ],
+        history: [],
+        notes: []
+      },
+      {
+        id: uid(), name: '稳健理财账户', color: PALETTE[2], mode: 'simple',
+        startDate: (() => { const d = new Date(); d.setDate(d.getDate() - 120); return formatDate(d); })(),
+        principal: 50000, assets: 52300, holdings: [], history: [], notes: []
+      }
+    ]
+  };
+}
+
+function normalizeState(s){
+  if(!s || !Array.isArray(s.accounts)) return seedState();
+  s.accounts.forEach(acc => {
+    if(!Array.isArray(acc.holdings)) acc.holdings = [];
+    if(!Array.isArray(acc.history)) acc.history = [];
+    if(!Array.isArray(acc.notes)) acc.notes = [];
+    if(typeof acc.startDate !== 'string') acc.startDate = '';
+    if(!acc.color) acc.color = PALETTE[0];
+    if(!acc.mode) acc.mode = 'simple';
+  });
+  return s;
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      return normalizeState(s);
+    }
+  }catch(e){}
+  return seedState();
+}
+
+let saveTimer = null;
+function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+function saveDebounced(){ clearTimeout(saveTimer); saveTimer = setTimeout(save, 250); }
+
+let state = loadState();
+let view = { name: 'home' };
+/* UI 折叠状态（不持久化） */
+const uiState = { histOpen: {}, notesOpen: {} };
+
+/* ============ 计算 ============ */
+function calcAcc(acc){
+  let p = 0, a = 0;
+  if(acc.mode === 'detail'){
+    (acc.holdings || []).forEach(h => { p += num(h.principal); a += num(h.assets); });
+  } else {
+    p = num(acc.principal);
+    a = num(acc.assets);
+  }
+  const profit = a - p;
+  return { principal: p, assets: a, profit, rate: p > 0 ? profit / p * 100 : 0 };
+}
+
+function calcAll(){
+  let p = 0, a = 0;
+  state.accounts.forEach(acc => { const s = calcAcc(acc); p += s.principal; a += s.assets; });
+  const profit = a - p;
+  return { principal: p, assets: a, profit, rate: p > 0 ? profit / p * 100 : 0 };
+}
+
+/* ============ 渲染 ============ */
+function render(scrollTop){
+  if(view.name === 'account' && !state.accounts.some(a => a.id === view.id)){
+    view = { name: 'home' };
+  }
+  if(view.name === 'account-edit' && !state.accounts.some(a => a.id === view.id)){
+    view = { name: 'home' };
+  }
+  const app = document.getElementById('app');
+  let inner = '';
+  if(view.name === 'home') inner = renderHome();
+  else if(view.name === 'accounts-edit') inner = renderAccountsEdit();
+  else if(view.name === 'account') inner = renderAccount(view.id);
+  else if(view.name === 'account-edit') inner = renderAccountEdit(view.id);
+  app.innerHTML = '<div class="page">' + inner + '</div>';
+  if(scrollTop) window.scrollTo(0, 0);
+  requestAnimationFrame(afterRender);
+}
+
+function legendHTML(items, total){
+  return items.map(it => `
+    <div class="lg-item">
+      <span class="lg-dot" style="background:${it.color}"></span>
+      <span class="lg-name">${esc(it.label)}</span>
+      <span class="lg-val">${fmtMoney(it.value)}</span>
+      <span class="lg-pct">${total > 0 ? ((it.value/total)*100).toFixed(1) : '0.0'}%</span>
+    </div>`).join('');
+}
+
+/* ---------- 首页 ---------- */
+function renderHome(){
+  const g = calcAll();
+  const list = state.accounts.map(acc => ({ acc, s: calcAcc(acc) }));
+  const items = list
+    .filter(x => x.s.assets > 0 || x.s.principal > 0)
+    .map(x => ({ label: x.acc.name || '未命名账户', value: x.s.assets || x.s.principal, color: x.acc.color }));
+  const total = items.reduce((s, i) => s + i.value, 0);
+  const profitCls = g.profit > 0 ? 'pos' : (g.profit < 0 ? 'neg' : '');
+
+  return `
+    <div class="topbar">
+      <div>
+        <div class="brand">攒钱日记</div>
+        <div class="brand-sub">定投理财数据看板</div>
+      </div>
+      <button class="btn-ghost" data-act="manage-accounts">编辑账户</button>
+    </div>
+
+    <div class="hero">
+      <div class="hero-head">
+        <div class="hero-label">总资产（元）</div>
+      </div>
+      <div class="hero-value">${fmtMoney(g.assets)}</div>
+      <div class="hero-metrics">
+        <div class="hm"><span>总本金</span><b>${shortMoney(g.principal)}</b></div>
+        <div class="hm"><span>总收益</span><b class="${profitCls}">${shortSigned(g.profit)}</b></div>
+        <div class="hm"><span>收益率</span><b class="${profitCls}">${fmtRate(g.rate)}</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">资产分布<span class="sub">${list.length} 个账户</span></div>
+      ${items.length
+        ? `<div class="chart-box"><canvas id="c-donut"></canvas></div>
+           <div class="legend">${legendHTML(items, total)}</div>`
+        : `<div class="empty">暂无数据<br>点击右上角「编辑账户」添加</div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-title">我的账户</div>
+      ${list.length ? list.map(({acc, s}) => {
+        const days = calcDays(acc.startDate);
+        return `
+        <div class="acc-item" data-act="open-acc" data-id="${acc.id}">
+          <span class="acc-dot" style="background:${acc.color}"></span>
+          <div class="acc-main">
+            <div class="acc-name">${esc(acc.name || '未命名账户')}</div>
+            <div class="acc-sub">
+              <span>${acc.mode === 'detail' ? ((acc.holdings || []).length + ' 个标的') : '整体录入'}</span>
+              ${days > 0 ? `<span class="days">实盘第${days}天</span>` : ''}
+            </div>
+          </div>
+          <div class="acc-right">
+            <div class="acc-amt">${fmtMoney(s.assets)}</div>
+            <div class="acc-rate ${s.profit > 0 ? 'up' : (s.profit < 0 ? 'down' : 'muted')}">${fmtRate(s.rate)}</div>
+          </div>
+        </div>`;
+      }).join('') : `<div class="empty">还没有账户</div>`}
+    </div>
+
+    ${list.length ? `<button class="btn-share" data-act="share-all">生成总览分享图</button>` : ''}
+  `;
+}
+
+/* ---------- 账户管理页 ---------- */
+function renderAccountsEdit(){
+  return `
+    <div class="topbar">
+      <button class="btn-ghost" data-act="back-from-edit">← 返回</button>
+      <div class="page-title">管理账户</div>
+      <div style="width:64px"></div>
+    </div>
+    <p class="hint">修改会自动保存。点击账户名称可修改，色点可换颜色。</p>
+    ${state.accounts.map(acc => `
+      <div class="card">
+        <div class="row" style="margin-bottom:12px">
+          <span class="acc-dot" style="background:${acc.color}"></span>
+          <input class="inp inp-name" data-field="acc-name" data-acc-id="${acc.id}" value="${esc(acc.name)}" placeholder="账户名称">
+          <button class="btn-del" data-act="del-acc" data-id="${acc.id}">删除</button>
+        </div>
+        <div class="color-picker">
+          ${PALETTE.map(c => `<span class="color-dot ${c === acc.color ? 'on' : ''}" style="background:${c}" data-act="set-color" data-acc-id="${acc.id}" data-color="${c}"></span>`).join('')}
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn-add" data-act="add-acc">+ 添加账户</button>
+  `;
+}
+
+/* ---------- 账户详情页 ---------- */
+function renderAccount(id){
+  const acc = state.accounts.find(a => a.id === id);
+  if(!acc) return '';
+  const s = calcAcc(acc);
+  const days = calcDays(acc.startDate);
+  const profitCls = s.profit > 0 ? 'pos' : (s.profit < 0 ? 'neg' : '');
+  const isDetail = acc.mode === 'detail';
+  const hist = (acc.history || []).slice().sort((a,b) => a.date.localeCompare(b.date));
+  const hasChart = hist.length >= 2;
+
+  const items = isDetail ? (acc.holdings || []).map(h => {
+    const p = num(h.principal), a = num(h.assets);
+    return {
+      label: h.name || '未命名标的',
+      value: a || p, principal: p, assets: a,
+      profit: a - p, rate: p > 0 ? (a - p) / p * 100 : 0,
+      color: h.color
+    };
+  }) : [];
+  const showItems = items.filter(x => x.value > 0);
+  const totalV = showItems.reduce((t, i) => t + i.value, 0);
+
+  const notes = (acc.notes || []).slice().sort((a,b) => b.date.localeCompare(a.date));
+
+  return `
+    <div class="topbar">
+      <button class="btn-ghost" data-act="go-home">← 返回</button>
+      <div class="page-title">${esc(acc.name || '账户详情')}</div>
+      <button class="btn-ghost" data-act="edit-acc" data-id="${acc.id}">编辑</button>
+    </div>
+
+    <div class="hero">
+      <div class="hero-head">
+        <div class="hero-label">资产（元）</div>
+        ${days > 0 ? `<span class="days-badge">实盘第 ${days} 天</span>` : ''}
+      </div>
+      <div class="hero-value">${fmtMoney(s.assets)}</div>
+      <div class="hero-metrics">
+        <div class="hm"><span>本金</span><b>${shortMoney(s.principal)}</b></div>
+        <div class="hm"><span>收益</span><b class="${profitCls}">${shortSigned(s.profit)}</b></div>
+        <div class="hm"><span>收益率</span><b class="${profitCls}">${fmtRate(s.rate)}</b></div>
+      </div>
+    </div>
+
+    <button class="btn-record" data-act="record-today" data-id="${acc.id}">📌 记录今日数据（${todayStr().slice(5)}）</button>
+
+    <div class="card">
+      <div class="card-title">数据走势<span class="sub">${hasChart ? (hist.length + ' 条记录') : '尚无数据'}</span></div>
+      ${hasChart
+        ? `<div class="chart-box"><canvas id="c-history"></canvas></div>
+           <div class="chart-legend">
+             <span><i style="background:#4f7cff"></i>本金</span>
+             <span><i style="background:#7b5cff"></i>市值</span>
+             <span><i style="background:#f7a942"></i>收益率</span>
+           </div>`
+        : `<div class="empty" style="padding:16px 0">至少需要 2 条历史记录才能绘制趋势图<br>点击上方按钮或去「编辑」中手动添加</div>`}
+    </div>
+
+    ${isDetail ? `
+      ${showItems.length ? `
+        <div class="card">
+          <div class="card-title">标的占比</div>
+          <div class="chart-box"><canvas id="c-donut"></canvas></div>
+          <div class="legend">${legendHTML(showItems, totalV)}</div>
+        </div>
+        <div class="card">
+          <div class="card-title">收益率对比</div>
+          <div class="chart-box"><canvas id="c-bars"></canvas></div>
+        </div>
+      ` : ''}
+      <div class="card">
+        <div class="card-title">标的明细</div>
+        ${items.length ? items.map(it => `
+          <div class="hold-item">
+            <div class="hold-top">
+              <span class="hold-name">${esc(it.label)}</span>
+              <span class="hold-profit ${it.profit > 0 ? 'up' : (it.profit < 0 ? 'down' : 'muted')}">${fmtSigned(it.profit)}</span>
+            </div>
+            <div class="hold-bar"><i style="width:${totalV > 0 ? Math.max(2, it.value / totalV * 100) : 0}%;background:${it.color}"></i></div>
+            <div class="hold-bottom">
+              <span>本金 ${fmtMoney(it.principal)}</span>
+              <span>市值 ${fmtMoney(it.assets)}</span>
+              <span class="${it.rate > 0 ? 'up' : (it.rate < 0 ? 'down' : 'muted')}">${fmtRate(it.rate)}</span>
+            </div>
+          </div>`).join('') : `<div class="empty">暂无标的</div>`}
+      </div>
+    ` : ''}
+
+    <div class="card">
+      <div class="card-title">备注<span class="sub">${notes.length} 条</span></div>
+      ${notes.length ? notes.map(n => `
+        <div class="note-item">
+          <div class="note-date">${esc(n.date)}</div>
+          <div class="note-content">${esc(n.content || '')}</div>
+        </div>`).join('') : `<div class="empty" style="padding:16px 0">暂无备注<br>可在「编辑」中添加</div>`}
+    </div>
+
+    <button class="btn-share" data-act="share-acc" data-id="${acc.id}">生成账户分享图</button>
+  `;
+}
+
+/* ---------- 账户编辑页 ---------- */
+function renderAccountEdit(id){
+  const acc = state.accounts.find(a => a.id === id);
+  if(!acc) return '';
+  const isDetail = acc.mode === 'detail';
+  const hist = (acc.history || []).slice().sort((a,b) => a.date.localeCompare(b.date));
+  const notes = (acc.notes || []).slice().sort((a,b) => a.date.localeCompare(b.date));
+
+  // 历史：默认展开条件 = 该账户尚无手动折叠/展开记录 && 历史为空
+  const histOpen = uiState.histOpen[acc.id] !== undefined
+    ? uiState.histOpen[acc.id]
+    : (hist.length === 0);
+
+  // 备注：同上
+  const notesOpen = uiState.notesOpen[acc.id] !== undefined
+    ? uiState.notesOpen[acc.id]
+    : (notes.length === 0);
+
+  return `
+    <div class="topbar">
+      <button class="btn-ghost" data-act="back-from-edit">← 返回</button>
+      <div class="page-title">编辑账户</div>
+      <div style="width:64px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">基本信息</div>
+      <div class="form-gap">
+        <label class="field-label">账户名称</label>
+        <input class="inp" data-field="acc-name" data-acc-id="${acc.id}" value="${esc(acc.name)}" placeholder="账户名称">
+      </div>
+      <div class="form-gap">
+        <label class="field-label">初始投资时间（用于计算实盘天数）</label>
+        <input class="inp" type="date" data-field="acc-start" data-acc-id="${acc.id}" value="${acc.startDate || ''}">
+      </div>
+      <div>
+        <label class="field-label">账户颜色</label>
+        <div class="color-picker">
+          ${PALETTE.map(c => `<span class="color-dot ${c === acc.color ? 'on' : ''}" style="background:${c}" data-act="set-color" data-acc-id="${acc.id}" data-color="${c}"></span>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">录入模式</div>
+      <div class="seg">
+        <button class="${isDetail ? 'on' : ''}" data-act="mode-detail" data-id="${acc.id}">按标的录入</button>
+        <button class="${!isDetail ? 'on' : ''}" data-act="mode-simple" data-id="${acc.id}">整体录入</button>
+      </div>
+      <p class="hint" style="margin:8px 0 0">切换模式会搬运当前总额数据，历史快照和备注不受影响。</p>
+    </div>
+
+    ${isDetail ? `
+      <div class="card">
+        <div class="card-title">标的列表<span class="sub">${(acc.holdings || []).length} 个</span></div>
+        ${(acc.holdings || []).map(h => `
+          <div class="h-row">
+            <div class="row">
+              <span class="acc-dot" style="background:${h.color}"></span>
+              <input class="inp inp-name" data-field="h-name" data-acc-id="${acc.id}" data-h-id="${h.id}" value="${esc(h.name)}" placeholder="标的名称">
+              <button class="btn-del" data-act="del-hold" data-acc-id="${acc.id}" data-h-id="${h.id}">删</button>
+            </div>
+            <div class="h-nums">
+              <label>本金（元）<input class="inp" type="number" inputmode="decimal" step="0.01" data-field="h-principal" data-acc-id="${acc.id}" data-h-id="${h.id}" value="${h.principal || ''}" placeholder="0"></label>
+              <label>当前市值（元）<input class="inp" type="number" inputmode="decimal" step="0.01" data-field="h-assets" data-acc-id="${acc.id}" data-h-id="${h.id}" value="${h.assets || ''}" placeholder="0"></label>
+            </div>
+          </div>
+        `).join('')}
+        <button class="btn-add" data-act="add-hold" data-id="${acc.id}">+ 添加标的</button>
+      </div>
+    ` : `
+      <div class="card">
+        <div class="card-title">整体数据</div>
+        <div class="h-nums">
+          <label>累计本金（元）<input class="inp" type="number" inputmode="decimal" step="0.01" data-field="acc-principal" data-acc-id="${acc.id}" value="${acc.principal || ''}" placeholder="0"></label>
+          <label>当前总市值（元）<input class="inp" type="number" inputmode="decimal" step="0.01" data-field="acc-assets" data-acc-id="${acc.id}" value="${acc.assets || ''}" placeholder="0"></label>
+        </div>
+      </div>
+    `}
+
+    <div class="card">
+      <div class="card-title collapsible" data-act="toggle-hist" data-id="${acc.id}">
+        <span class="lhs">历史数据 <span class="sub" style="margin-left:4px">${hist.length} 条</span></span>
+        <span class="chevron ${histOpen ? 'open' : ''}">▾</span>
+      </div>
+      <div class="collapse-body">
+        <button class="btn-line" style="width:100%;margin-bottom:10px" data-act="record-today" data-id="${acc.id}">📌 记录今日数据</button>
+        ${histOpen ? `
+          <p class="hint">每次录入一条快照，用于绘制账户走势曲线。</p>
+          ${hist.length ? hist.map(h => `
+            <div class="h-row">
+              <div class="row">
+                <input class="inp" type="date" data-field="hist-date" data-acc-id="${acc.id}" data-h-id="${h.id}" value="${h.date}">
+                <button class="btn-del" data-act="del-hist" data-acc-id="${acc.id}" data-h-id="${h.id}">删</button>
+              </div>
+              <div class="h-nums">
+                <label>本金（元）<input class="inp" type="number" inputmode="decimal" step="0.01" data-field="hist-principal" data-acc-id="${acc.id}" data-h-id="${h.id}" value="${h.principal || ''}" placeholder="0"></label>
+                <label>市值（元）<input class="inp" type="number" inputmode="decimal" step="0.01" data-field="hist-assets" data-acc-id="${acc.id}" data-h-id="${h.id}" value="${h.assets || ''}" placeholder="0"></label>
+              </div>
+            </div>
+          `).join('') : `<div class="empty" style="padding:16px 0">还没有历史记录</div>`}
+          <button class="btn-add" data-act="add-hist" data-id="${acc.id}">+ 添加历史快照</button>
+        ` : ''}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title collapsible" data-act="toggle-notes" data-id="${acc.id}">
+        <span class="lhs">备注 <span class="sub" style="margin-left:4px">${notes.length} 条</span></span>
+        <span class="chevron ${notesOpen ? 'open' : ''}">▾</span>
+      </div>
+      <div class="collapse-body">
+        ${notesOpen ? `
+          <p class="hint">记录每次操作思路、市场观察或心得体会。</p>
+          ${notes.length ? notes.map(n => `
+            <div class="h-row">
+              <div class="row">
+                <input class="inp" type="date" data-field="note-date" data-acc-id="${acc.id}" data-nid="${n.id}" value="${n.date}">
+                <button class="btn-del" data-act="del-note" data-acc-id="${acc.id}" data-nid="${n.id}">删</button>
+              </div>
+              <textarea class="inp" rows="2" data-field="note-content" data-acc-id="${acc.id}" data-nid="${n.id}" placeholder="写点什么...">${esc(n.content)}</textarea>
+            </div>
+          `).join('') : `<div class="empty" style="padding:16px 0">还没有备注</div>`}
+          <button class="btn-add" data-act="add-note" data-id="${acc.id}">+ 添加备注</button>
+        ` : ''}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">数据管理</div>
+      <div class="row">
+        <button class="btn-line" data-act="export-json">导出备份</button>
+        <button class="btn-line" data-act="import-json">导入备份</button>
+      </div>
+      <button class="btn-del" style="width:100%;margin-top:12px;background:#fff;text-align:center" data-act="reset-all">清空所有数据</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+    </div>
+  `;
+}
+
+/* ============ 图表绘制 ============ */
+function drawDonut(canvas, items, total){
+  if(!canvas || !items.length || total <= 0) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.clientWidth;
+  const h = 200;
+  canvas.style.height = h + 'px';
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const cx = w/2, cy = h/2;
+  const R = Math.min(w, h) * 0.42;
+  const r = R * 0.62;
+  let a0 = -Math.PI/2;
+  const gap = items.length > 1 ? 0.02 : 0;
+  items.forEach(it => {
+    const ang = (it.value/total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, a0 + gap/2, a0 + ang - gap/2);
+    ctx.arc(cx, cy, r, a0 + ang - gap/2, a0 + gap/2, true);
+    ctx.closePath();
+    ctx.fillStyle = it.color;
+    ctx.fill();
+    a0 += ang;
+  });
+  ctx.fillStyle = '#1a1f36';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 20px ' + FONT;
+  ctx.fillText(shortMoney(total), cx, cy - 6);
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '12px ' + FONT;
+  ctx.fillText('总市值', cx, cy + 16);
+}
+
+function drawBars(canvas, items){
+  if(!canvas || !items.length) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.clientWidth;
+  const rowH = 34;
+  const h = items.length * rowH + 20;
+  canvas.style.height = h + 'px';
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const labelW = 110;
+  const valW = 62;
+  const chartX = labelW + 8;
+  const chartW = Math.max(20, w - labelW - valW - 16);
+  const midX = chartX + chartW/2;
+  const maxAbs = Math.max(...items.map(i => Math.abs(i.rate)), 1);
+
+  ctx.strokeStyle = '#eef1f7';
+  ctx.beginPath();
+  ctx.moveTo(midX, 8);
+  ctx.lineTo(midX, h - 6);
+  ctx.stroke();
+
+  items.forEach((it, idx) => {
+    const y = 10 + idx * rowH + rowH/2;
+    ctx.fillStyle = '#454b63';
+    ctx.font = '12.5px ' + FONT;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(fitText(ctx, it.label, labelW - 4), 0, y);
+
+    const barH = 14;
+    const halfW = (Math.abs(it.rate) / maxAbs) * (chartW/2 - 4);
+    const positive = it.rate >= 0;
+    const color = positive ? UP : DOWN;
+    const bx = positive ? midX : midX - halfW;
+    ctx.fillStyle = color;
+    roundRect(ctx, bx, y - barH/2, Math.max(2, halfW), barH, 4);
+    ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.font = '600 12px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText(fmtRate(it.rate), w - 4, y);
+  });
+}
+
+/* 走势图：本金/市值（左轴）+ 收益率（右轴），平滑无点 */
+function drawHistoryChart(canvas, history){
+  if(!canvas || !history || history.length < 2) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.clientWidth;
+  const h = 240;
+  canvas.style.height = h + 'px';
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const padL = 48, padR = 48, padT = 18, padB = 28;
+  const cw = Math.max(20, w - padL - padR);
+  const ch = Math.max(20, h - padT - padB);
+
+  const sorted = history.slice().sort((a,b) => a.date.localeCompare(b.date));
+  const points = sorted.map(hh => {
+    const p = num(hh.principal);
+    const a = num(hh.assets);
+    return { date: hh.date, principal: p, assets: a, rate: p > 0 ? (a - p) / p * 100 : 0 };
+  });
+  const n = points.length;
+  points.forEach((pt, i) => { pt.x = padL + (i / (n - 1)) * cw; });
+
+  const leftVals = [];
+  points.forEach(p => { leftVals.push(p.principal, p.assets); });
+  let minL = Math.min(...leftVals);
+  let maxL = Math.max(...leftVals);
+  if(maxL === minL){ if(maxL === 0){ maxL = 1; } else { minL = 0; } }
+  const spanL = maxL - minL || 1;
+  minL -= spanL * 0.12;
+  maxL += spanL * 0.12;
+
+  const rightVals = points.map(p => p.rate);
+  let minR = Math.min(...rightVals, 0);
+  let maxR = Math.max(...rightVals, 0);
+  if(maxR === minR){ maxR = minR + 1; }
+  const spanR = maxR - minR || 1;
+  minR -= spanR * 0.18;
+  maxR += spanR * 0.18;
+
+  const yL = v => padT + (1 - (v - minL) / (maxL - minL)) * ch;
+  const yR = v => padT + (1 - (v - minR) / (maxR - minR)) * ch;
+
+  ctx.strokeStyle = '#eef1f7';
+  ctx.lineWidth = 1;
+  [0, 0.5, 1].forEach(t => {
+    const y = padT + t * ch;
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(w - padR, y);
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '10px ' + FONT;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  [0, 0.5, 1].forEach(t => {
+    const val = maxL - t * (maxL - minL);
+    ctx.fillText(shortMoney(val), padL - 6, padT + t * ch);
+  });
+
+  ctx.textAlign = 'left';
+  [0, 0.5, 1].forEach(t => {
+    const val = maxR - t * (maxR - minR);
+    ctx.fillText(val.toFixed(1) + '%', w - padR + 6, padT + t * ch);
+  });
+
+  function drawSmooth(getY, strokeColor, fillColor){
+    const pts = points.map(p => ({ x: p.x, y: getY(p) }));
+    if(fillColor){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(padL, padT, cw, ch);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for(let i = 0; i < pts.length - 1; i++){
+        const p1 = pts[i], p2 = pts[i+1];
+        const mx = (p1.x + p2.x) / 2;
+        ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
+      }
+      ctx.lineTo(pts[pts.length-1].x, padT + ch);
+      ctx.lineTo(pts[0].x, padT + ch);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, padT, 0, padT + ch);
+      grad.addColorStop(0, fillColor);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for(let i = 0; i < pts.length - 1; i++){
+      const p1 = pts[i], p2 = pts[i+1];
+      const mx = (p1.x + p2.x) / 2;
+      ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
+    }
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  drawSmooth(p => yL(p.principal), '#4f7cff', 'rgba(79,124,255,0.18)');
+  drawSmooth(p => yL(p.assets), '#7b5cff', 'rgba(123,92,255,0.18)');
+  drawSmooth(p => yR(p.rate), '#f7a942', null);
+
+  const midIdx = Math.floor((n - 1) / 2);
+  const datePositions = [
+    { x: points[0].x, text: points[0].date.slice(5), align: 'left' },
+    { x: points[midIdx].x, text: points[midIdx].date.slice(5), align: 'center' },
+    { x: points[n-1].x, text: points[n-1].date.slice(5), align: 'right' }
+  ];
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '10px ' + FONT;
+  ctx.textBaseline = 'top';
+  datePointsDedup(datePositions).forEach(dp => {
+    ctx.textAlign = dp.align;
+    ctx.fillText(dp.text, dp.x, padT + ch + 8);
+  });
+}
+
+function datePointsDedup(arr){
+  if(arr.length <= 1) return arr;
+  const out = [arr[0]];
+  for(let i = 1; i < arr.length; i++){
+    if(arr[i].x - out[out.length-1].x > 30) out.push(arr[i]);
+  }
+  if(out[out.length-1] !== arr[arr.length-1]) out[out.length-1] = arr[arr.length-1];
+  return out;
+}
+
+function afterRender(){
+  if(view.name === 'home'){
+    const cv = document.getElementById('c-donut');
+    if(cv){
+      const items = state.accounts.map(acc => ({ s: calcAcc(acc), acc }))
+        .filter(x => x.s.assets > 0 || x.s.principal > 0)
+        .map(x => ({ label: x.acc.name, value: x.s.assets || x.s.principal, color: x.acc.color }));
+      const total = items.reduce((s, i) => s + i.value, 0);
+      drawDonut(cv, items, total);
+    }
+  } else if(view.name === 'account'){
+    const acc = state.accounts.find(a => a.id === view.id);
+    if(!acc) return;
+    const cvH = document.getElementById('c-history');
+    if(cvH){
+      const hist = (acc.history || []).slice().sort((a,b) => a.date.localeCompare(b.date));
+      drawHistoryChart(cvH, hist);
+    }
+    if(acc.mode === 'detail'){
+      const items = (acc.holdings || []).map(h => {
+        const p = num(h.principal), a = num(h.assets);
+        return { label: h.name || '未命名', value: a || p, principal: p, assets: a,
+          rate: p > 0 ? (a - p) / p * 100 : 0, color: h.color };
+      });
+      const shown = items.filter(x => x.value > 0);
+      const total = shown.reduce((s, i) => s + i.value, 0);
+      const cv1 = document.getElementById('c-donut');
+      if(cv1) drawDonut(cv1, shown, total);
+      const cv2 = document.getElementById('c-bars');
+      if(cv2) drawBars(cv2, items);
+    }
+  }
+}
+
+/* ============ 事件 ============ */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act;
+  const id = el.dataset.id;
+
+  if(act === 'go-home'){ view = { name: 'home' }; render(true); }
+  else if(act === 'manage-accounts'){ view = { name: 'accounts-edit' }; render(true); }
+  else if(act === 'open-acc'){ view = { name: 'account', id }; render(true); }
+  else if(act === 'edit-acc'){ view = { name: 'account-edit', id }; render(true); }
+  else if(act === 'back-from-edit'){
+    if(view.name === 'account-edit'){
+      view = { name: 'account', id: view.id };
+    } else {
+      view = { name: 'home' };
+    }
+    render(true);
+  }
+  else if(act === 'close-modal'){ document.getElementById('modal').classList.remove('show'); }
+  else if(act === 'share-all'){ shareAll(); }
+  else if(act === 'share-acc'){ shareAcc(id); }
+
+  else if(act === 'add-acc'){
+    state.accounts.push(newAccount('新账户'));
+    save(); render();
+  }
+  else if(act === 'del-acc'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(acc && confirm('确定删除「' + acc.name + '」吗？该账户的所有数据将被删除。')){
+      state.accounts = state.accounts.filter(a => a.id !== id);
+      save(); render();
+    }
+  }
+  else if(act === 'set-color'){
+    const acc = state.accounts.find(a => a.id === el.dataset.accId);
+    if(acc){ acc.color = el.dataset.color; save(); render(); }
+  }
+
+  else if(act === 'mode-detail' || act === 'mode-simple'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(!acc) return;
+    const to = act === 'mode-detail' ? 'detail' : 'simple';
+    if(acc.mode === to) return;
+    if(to === 'simple'){
+      if(acc.holdings && acc.holdings.length){
+        const s = calcAcc(acc);
+        if(!confirm('切换为「整体录入」会丢掉各标的的明细（但会把当前总额搬过去）。继续？')) return;
+        acc.principal = s.principal;
+        acc.assets = s.assets;
+        acc.holdings = [];
+      }
+      acc.mode = 'simple';
+    } else {
+      acc.mode = 'detail';
+      acc.holdings = acc.holdings || [];
+    }
+    save(); render();
+  }
+  else if(act === 'add-hold'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(!acc) return;
+    const idx = (acc.holdings || []).length;
+    acc.holdings.push({
+      id: uid(), name: '新标的', principal: 0, assets: 0,
+      color: PALETTE[idx % PALETTE.length]
+    });
+    save(); render();
+  }
+  else if(act === 'del-hold'){
+    const acc = state.accounts.find(a => a.id === el.dataset.accId);
+    if(!acc) return;
+    acc.holdings = (acc.holdings || []).filter(h => h.id !== el.dataset.hId);
+    save(); render();
+  }
+
+  /* 历史折叠/展开 */
+  else if(act === 'toggle-hist'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(!acc) return;
+    const cur = uiState.histOpen[id] !== undefined
+      ? uiState.histOpen[id]
+      : ((acc.history || []).length === 0);
+    uiState.histOpen[id] = !cur;
+    render();
+  }
+  else if(act === 'toggle-notes'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(!acc) return;
+    const cur = uiState.notesOpen[id] !== undefined
+      ? uiState.notesOpen[id]
+      : ((acc.notes || []).length === 0);
+    uiState.notesOpen[id] = !cur;
+    render();
+  }
+
+  /* 历史 */
+  else if(act === 'add-hist'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(!acc) return;
+    acc.history = acc.history || [];
+    const last = acc.history.slice().sort((a,b) => a.date.localeCompare(b.date)).pop();
+    const s = calcAcc(acc);
+    acc.history.push({
+      id: uid(), date: todayStr(),
+      principal: last ? last.principal : s.principal,
+      assets: last ? last.assets : s.assets
+    });
+    uiState.histOpen[id] = true;
+    save(); render();
+  }
+  else if(act === 'del-hist'){
+    const acc = state.accounts.find(a => a.id === el.dataset.accId);
+    if(!acc) return;
+    acc.history = (acc.history || []).filter(h => h.id !== el.dataset.hId);
+    save(); render();
+  }
+  else if(act === 'record-today'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(!acc) return;
+    const s = calcAcc(acc);
+    const today = todayStr();
+    acc.history = acc.history || [];
+    const existing = acc.history.find(h => h.date === today);
+    if(existing){
+      existing.principal = s.principal;
+      existing.assets = s.assets;
+    } else {
+      acc.history.push({ id: uid(), date: today, principal: s.principal, assets: s.assets });
+    }
+    uiState.histOpen[id] = true;
+    save();
+    showToast('已记录今日数据');
+    render();
+  }
+
+  /* 备注 */
+  else if(act === 'add-note'){
+    const acc = state.accounts.find(a => a.id === id);
+    if(!acc) return;
+    acc.notes = acc.notes || [];
+    acc.notes.push({ id: uid(), date: todayStr(), content: '' });
+    uiState.notesOpen[id] = true;
+    save(); render();
+  }
+  else if(act === 'del-note'){
+    const acc = state.accounts.find(a => a.id === el.dataset.accId);
+    if(!acc) return;
+    acc.notes = (acc.notes || []).filter(n => n.id !== el.dataset.nid);
+    save(); render();
+  }
+
+  /* 数据管理 */
+  else if(act === 'export-json'){
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'savings-diary-' + todayStr() + '.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  else if(act === 'import-json'){
+    document.getElementById('importFile').click();
+  }
+  else if(act === 'reset-all'){
+    if(confirm('确定清空所有数据吗？此操作不可恢复！')){
+      localStorage.removeItem(STORAGE_KEY);
+      state = seedState();
+      uiState.histOpen = {};
+      uiState.notesOpen = {};
+      save(); render(true);
+    }
+  }
+});
+
+// 输入事件
+document.addEventListener('input', e => {
+  const el = e.target;
+  if(!el.dataset || !el.dataset.field) return;
+  const acc = state.accounts.find(a => a.id === el.dataset.accId);
+  if(!acc) return;
+  const field = el.dataset.field;
+  const hId = el.dataset.hId;
+  const nId = el.dataset.nid;
+
+  if(field === 'acc-name'){ acc.name = el.value; }
+  else if(field === 'acc-start'){ acc.startDate = el.value; }
+  else if(field === 'acc-principal'){ acc.principal = num(el.value); }
+  else if(field === 'acc-assets'){ acc.assets = num(el.value); }
+  else if(field === 'h-name'){
+    const h = (acc.holdings || []).find(x => x.id === hId);
+    if(h) h.name = el.value;
+  }
+  else if(field === 'h-principal'){
+    const h = (acc.holdings || []).find(x => x.id === hId);
+    if(h) h.principal = num(el.value);
+  }
+  else if(field === 'h-assets'){
+    const h = (acc.holdings || []).find(x => x.id === hId);
+    if(h) h.assets = num(el.value);
+  }
+  else if(field === 'hist-date'){
+    const h = (acc.history || []).find(x => x.id === hId);
+    if(h) h.date = el.value;
+  }
+  else if(field === 'hist-principal'){
+    const h = (acc.history || []).find(x => x.id === hId);
+    if(h) h.principal = num(el.value);
+  }
+  else if(field === 'hist-assets'){
+    const h = (acc.history || []).find(x => x.id === hId);
+    if(h) h.assets = num(el.value);
+  }
+  else if(field === 'note-date'){
+    const n = (acc.notes || []).find(x => x.id === nId);
+    if(n) n.date = el.value;
+  }
+  else if(field === 'note-content'){
+    const n = (acc.notes || []).find(x => x.id === nId);
+    if(n) n.content = el.value;
+  }
+  saveDebounced();
+});
+
+// 导入文件
+document.addEventListener('change', e => {
+  const el = e.target;
+  if(el.id !== 'importFile' || !el.files || !el.files[0]) return;
+  const file = el.files[0];
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const s = JSON.parse(reader.result);
+      if(!s || !Array.isArray(s.accounts)) throw new Error('bad');
+      state = normalizeState(s);
+      save(); render(true);
+      alert('导入成功！');
+    }catch(err){
+      alert('导入失败：文件格式不正确');
+    }
+    el.value = '';
+  };
+  reader.readAsText(file);
+});
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => afterRender(), 150);
+});
+
+/* 轻提示 */
+function showToast(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(26,31,54,.92);color:#fff;padding:10px 18px;border-radius:12px;font-size:13.5px;z-index:200;pointer-events:none;transition:opacity .3s;font-family:'+FONT;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; }, 1400);
+  setTimeout(() => t.remove(), 1800);
+}
+
+/* ============ 分享图 ============ */
+function shareAll(){
+  const g = calcAll();
+  const list = state.accounts.map(acc => ({ acc, s: calcAcc(acc) }))
+    .filter(x => x.s.assets > 0 || x.s.principal > 0);
+  let items = list.map(x => ({
+    label: x.acc.name || '未命名账户',
+    value: x.s.assets || x.s.principal,
+    color: x.acc.color
+  }));
+  items = aggregateForShare(items, 6);
+  const total = items.reduce((s, i) => s + i.value, 0);
+  if(!items.length){ alert('还没有数据，先去编辑吧'); return; }
+  const img = buildShareImage({
+    title: '攒钱日记 · 总览',
+    subtitle: todayStr(),
+    days: 0,
+    main: { label: '总资产（元）', value: g.assets, principal: g.principal, profit: g.profit, rate: g.rate },
+    donutTitle: '账户资产分布',
+    donutItems: items,
+    donutTotal: total,
+    history: [],
+    bars: []
+  });
+  showModal(img);
+}
+
+function shareAcc(id){
+  const acc = state.accounts.find(a => a.id === id);
+  if(!acc) return;
+  const s = calcAcc(acc);
+  const days = calcDays(acc.startDate);
+  const hist = (acc.history || []).slice().sort((a,b) => a.date.localeCompare(b.date));
+  const hasChart = hist.length >= 2;
+
+  let items = [], bars = [];
+  if(acc.mode === 'detail'){
+    items = (acc.holdings || []).map(h => {
+      const p = num(h.principal), a = num(h.assets);
+      return { label: h.name || '未命名', value: a || p, color: h.color,
+        rate: p > 0 ? (a - p) / p * 100 : 0 };
+    }).filter(x => x.value > 0);
+    items = aggregateForShare(items, 6);
+    bars = (acc.holdings || []).map(h => {
+      const p = num(h.principal), a = num(h.assets);
+      return { label: h.name || '未命名', rate: p > 0 ? (a - p) / p * 100 : 0 };
     });
   }
+  const total = items.reduce((s, i) => s + i.value, 0);
+
+  const img = buildShareImage({
+    title: acc.name || '账户详情',
+    subtitle: todayStr(),
+    days,
+    main: { label: '资产（元）', value: s.assets, principal: s.principal, profit: s.profit, rate: s.rate },
+    donutTitle: acc.mode === 'detail' ? '标的占比' : '',
+    donutItems: items,
+    donutTotal: total,
+    history: hasChart ? hist : [],
+    bars: acc.mode === 'detail' ? bars : []
+  });
+  showModal(img);
+}
+
+function buildShareImage(d){
+  const W = 1080;
+  const pad = 60;
+  const innerW = W - pad * 2;
+
+  const headerH = 200;
+  const mainCardH = 460;
+  const historyH = (d.history && d.history.length >= 2) ? 560 : 0;
+  /* 环形图卡片高度：≤3 个标的时更紧凑；4–6 个（聚合后）时加高 */
+  const donutItemCount = d.donutItems ? d.donutItems.length : 0;
+  const donutH = donutItemCount > 0 ? (donutItemCount <= 3 ? 560 : 620) : 0;
+  const barsH = (d.bars && d.bars.length) ? (d.bars.length * 100 + 150) : 0;
+  const footerH = 100;
+  const gap = 32;
+
+  let H = pad + headerH + gap + mainCardH + gap;
+  if(historyH){ H += historyH + gap; }
+  if(donutH){ H += donutH + gap; }
+  if(barsH){ H += barsH + gap; }
+  H += footerH + pad;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#f4f6fb');
+  bgGrad.addColorStop(1, '#eaf0ff');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  let y = pad;
+  ctx.fillStyle = '#1a1f36';
+  ctx.font = '700 60px ' + FONT;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.fillText(fitText(ctx, d.title, innerW - 280), pad, y);
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '26px ' + FONT;
+  ctx.fillText(d.subtitle, pad, y + 86);
+  if(d.days > 0){
+    ctx.font = '600 24px ' + FONT;
+    const txt = '实盘第 ' + d.days + ' 天';
+    const tw = ctx.measureText(txt).width + 36;
+    const bx = pad + innerW - tw;
+    const by = y + 4;
+    ctx.fillStyle = '#e4ecff';
+    roundRect(ctx, bx, by, tw, 44, 22);
+    ctx.fill();
+    ctx.fillStyle = '#4f7cff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(txt, bx + tw/2, by + 22);
+  }
+  y += headerH;
+
+  drawShareMainCard(ctx, pad, y, innerW, mainCardH, d.main);
+  y += mainCardH + gap;
+
+  if(historyH){
+    drawShareHistory(ctx, pad, y, innerW, historyH, d.history);
+    y += historyH + gap;
+  }
+
+  if(donutH){
+    drawShareDonut(ctx, pad, y, innerW, donutH, d.donutTitle, d.donutItems, d.donutTotal);
+    y += donutH + gap;
+  }
+
+  if(barsH){
+    drawShareBars(ctx, pad, y, innerW, barsH, '收益率对比', d.bars);
+    y += barsH + gap;
+  }
+
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '26px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('· 攒钱日记 · 定投数据看板 ·', W/2, y + 40);
+
+  return canvas.toDataURL('image/png');
+}
+
+function drawShareMainCard(ctx, x, y, w, h, m){
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, '#5b8cff');
+  grad.addColorStop(1, '#7b5cff');
+  ctx.fillStyle = grad;
+  roundRect(ctx, x, y, w, h, 40);
+  ctx.fill();
+
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x + w - 60, y + 40, 200, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  const px = x + 48;
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.font = '32px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(m.label, px, y + 56);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 84px ' + FONT;
+  ctx.fillText(fitText(ctx, fmtMoney(m.value), w - 96), px, y + 110);
+
+  const boxY = y + 280;
+  const boxH = 130;
+  const boxW = (w - 48*2 - 16*2) / 3;
+  const labels = ['本金', '收益', '收益率'];
+  const vals = [shortMoney(m.principal), shortSigned(m.profit), fmtRate(m.rate)];
+  labels.forEach((lb, i) => {
+    const bx = px + i * (boxW + 16);
+    ctx.fillStyle = 'rgba(255,255,255,.16)';
+    roundRect(ctx, bx, boxY, boxW, boxH, 24);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.font = '26px ' + FONT;
+    ctx.textBaseline = 'top';
+    ctx.fillText(lb, bx + 24, boxY + 22);
+    const color = i === 0 ? '#fff' : (m.profit > 0 ? '#ffe28a' : (m.profit < 0 ? '#a8f0d4' : '#fff'));
+    ctx.fillStyle = color;
+    ctx.font = '700 34px ' + FONT;
+    ctx.fillText(fitText(ctx, vals[i], boxW - 48), bx + 24, boxY + 66);
+  });
+}
+
+function drawShareHistory(ctx, x, y, w, h, history){
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, x, y, w, h, 32);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1f36';
+  ctx.font = '600 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('数据走势', x + 40, y + 32);
+
+  ctx.font = '22px ' + FONT;
+  const legendItems = [
+    { c: '#4f7cff', t: '本金' },
+    { c: '#7b5cff', t: '市值' },
+    { c: '#f7a942', t: '收益率' }
+  ];
+  let lx = x + 40 + ctx.measureText('数据走势').width + 130;
+  legendItems.forEach(li => {
+    ctx.fillStyle = li.c;
+    roundRect(ctx, lx, y + 44, 24, 5, 3);
+    ctx.fill();
+    ctx.fillStyle = '#6b7391';
+    ctx.fillText(li.t, lx + 34, y + 34);
+    lx += ctx.measureText(li.t).width + 84;
+  });
+
+  const padL = 100, padR = 100, padT = 120, padB = 60;
+  const cx = x + padL;
+  const cy = y + padT;
+  const cw = w - padL - padR;
+  const ch = h - padT - padB;
+
+  const sorted = history.slice().sort((a,b) => a.date.localeCompare(b.date));
+  const points = sorted.map(hh => {
+    const p = num(hh.principal);
+    const a = num(hh.assets);
+    return { date: hh.date, principal: p, assets: a, rate: p > 0 ? (a - p) / p * 100 : 0 };
+  });
+  const n = points.length;
+  points.forEach((pt, i) => { pt.x = cx + (i / (n - 1)) * cw; });
+
+  const leftVals = [];
+  points.forEach(p => { leftVals.push(p.principal, p.assets); });
+  let minL = Math.min(...leftVals);
+  let maxL = Math.max(...leftVals);
+  if(maxL === minL){ if(maxL === 0){ maxL = 1; } else { minL = 0; } }
+  const spanL = maxL - minL || 1;
+  minL -= spanL * 0.12;
+  maxL += spanL * 0.12;
+
+  const rightVals = points.map(p => p.rate);
+  let minR = Math.min(...rightVals, 0);
+  let maxR = Math.max(...rightVals, 0);
+  if(maxR === minR){ maxR = minR + 1; }
+  const spanR = maxR - minR || 1;
+  minR -= spanR * 0.18;
+  maxR += spanR * 0.18;
+
+  const yL = v => cy + (1 - (v - minL) / (maxL - minL)) * ch;
+  const yR = v => cy + (1 - (v - minR) / (maxR - minR)) * ch;
+
+  ctx.strokeStyle = '#eef1f7';
+  ctx.lineWidth = 1.5;
+  [0, 0.5, 1].forEach(t => {
+    const gy = cy + t * ch;
+    ctx.beginPath();
+    ctx.moveTo(cx, gy);
+    ctx.lineTo(cx + cw, gy);
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '20px ' + FONT;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  [0, 0.5, 1].forEach(t => {
+    const val = maxL - t * (maxL - minL);
+    ctx.fillText(shortMoney(val), cx - 14, cy + t * ch);
+  });
+  ctx.textAlign = 'left';
+  [0, 0.5, 1].forEach(t => {
+    const val = maxR - t * (maxR - minR);
+    ctx.fillText(val.toFixed(1) + '%', cx + cw + 14, cy + t * ch);
+  });
+
+  function drawSmooth(getY, strokeColor, fillColor){
+    const pts = points.map(p => ({ x: p.x, y: getY(p) }));
+    if(fillColor){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cx, cy, cw, ch);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for(let i = 0; i < pts.length - 1; i++){
+        const p1 = pts[i], p2 = pts[i+1];
+        const mx = (p1.x + p2.x) / 2;
+        ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
+      }
+      ctx.lineTo(pts[pts.length-1].x, cy + ch);
+      ctx.lineTo(pts[0].x, cy + ch);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, cy, 0, cy + ch);
+      grad.addColorStop(0, fillColor);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for(let i = 0; i < pts.length - 1; i++){
+      const p1 = pts[i], p2 = pts[i+1];
+      const mx = (p1.x + p2.x) / 2;
+      ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
+    }
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 3.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  drawSmooth(p => yL(p.principal), '#4f7cff', 'rgba(79,124,255,0.18)');
+  drawSmooth(p => yL(p.assets), '#7b5cff', 'rgba(123,92,255,0.18)');
+  drawSmooth(p => yR(p.rate), '#f7a942', null);
+
+  const midIdx = Math.floor((n - 1) / 2);
+  const arr = [
+    { x: points[0].x, text: points[0].date.slice(5), align: 'left' },
+    { x: points[midIdx].x, text: points[midIdx].date.slice(5), align: 'center' },
+    { x: points[n-1].x, text: points[n-1].date.slice(5), align: 'right' }
+  ];
+  const dedup = datePointsDedup(arr);
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '20px ' + FONT;
+  ctx.textBaseline = 'top';
+  dedup.forEach(dp => {
+    ctx.textAlign = dp.align;
+    ctx.fillText(dp.text, dp.x, cy + ch + 16);
+  });
+}
+
+function drawShareDonut(ctx, x, y, w, h, title, items, total){
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, x, y, w, h, 32);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1f36';
+  ctx.font = '600 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(title, x + 40, y + 32);
+
+  /* 环形图固定位置；图例位置基于卡片高度 + 行数动态计算 */
+  const cx = x + w/2;
+  const cy = y + 300;
+  const R = 140;
+  const r = 88;
+  let a0 = -Math.PI/2;
+  const gap = items.length > 1 ? 0.025 : 0;
+  items.forEach(it => {
+    const ang = (it.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, a0 + gap/2, a0 + ang - gap/2);
+    ctx.arc(cx, cy, r, a0 + ang - gap/2, a0 + gap/2, true);
+    ctx.closePath();
+    ctx.fillStyle = it.color;
+    ctx.fill();
+    a0 += ang;
+  });
+  ctx.fillStyle = '#1a1f36';
+  ctx.font = '700 40px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(shortMoney(total), cx, cy - 14);
+  ctx.fillStyle = '#9aa1b5';
+  ctx.font = '24px ' + FONT;
+  ctx.fillText('总市值', cx, cy + 32);
+
+  /* 图例：从底部反推，保证永远不压环形图 */
+  const rows = Math.ceil(items.length / 3);
+  const rowH = 56;
+  const legendH = rows * rowH;
+  const lgY = y + h - 20 - legendH;
+  const cols = Math.min(items.length, 3);
+  const colW = (w - 80) / cols;
+  const pctW = 90;                                   // 百分比预留宽度
+  items.forEach((it, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const lx = x + 40 + col * colW;
+    const ly = lgY + row * rowH;
+    ctx.fillStyle = it.color;
+    ctx.beginPath();
+    ctx.arc(lx + 10, ly + 14, 9, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#454b63';
+    ctx.font = '24px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const pct = total > 0 ? ((it.value/total)*100).toFixed(1) + '%' : '0%';
+    const nameMaxW = colW - 40 - pctW - 20;          // 名字可用宽度
+    ctx.fillText(fitText(ctx, it.label, nameMaxW), lx + 30, ly + 14);
+    ctx.fillStyle = '#9aa1b5';
+    ctx.textAlign = 'right';
+    ctx.fillText(pct, lx + colW - 20, ly + 14);
+  });
+}
+
+function drawShareBars(ctx, x, y, w, h, title, items){
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, x, y, w, h, 32);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1f36';
+  ctx.font = '600 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(title, x + 40, y + 32);
+
+  const labelW = 300;
+  const valW = 160;
+  const chartX = x + 40 + labelW;
+  const chartW = w - 40*2 - labelW - valW;
+  const midX = chartX + chartW/2;
+  const maxAbs = Math.max(...items.map(i => Math.abs(i.rate)), 1);
+  const startY = y + 100;
+  const rowH = 90;
+
+  ctx.strokeStyle = '#eef1f7';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(midX, startY + 10);
+  ctx.lineTo(midX, startY + items.length * rowH - 10);
+  ctx.stroke();
+
+  items.forEach((it, idx) => {
+    const cy = startY + idx * rowH + rowH/2;
+    ctx.fillStyle = '#454b63';
+    ctx.font = '26px ' + FONT;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(fitText(ctx, it.label, labelW - 20), x + 40, cy);
+
+    const barH = 36;
+    const halfW = (Math.abs(it.rate) / maxAbs) * (chartW/2 - 10);
+    const positive = it.rate >= 0;
+    const color = positive ? UP : DOWN;
+    const bx = positive ? midX : midX - halfW;
+    ctx.fillStyle = color;
+    roundRect(ctx, bx, cy - barH/2, Math.max(6, halfW), barH, 10);
+    ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.font = '600 26px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText(fmtRate(it.rate), x + w - 40, cy);
+  });
+}
+
+function showModal(dataUrl){
+  const modal = document.getElementById('modal');
+  document.getElementById('shareImg').src = dataUrl;
+  const dl = document.getElementById('dlBtn');
+  dl.href = dataUrl;
+  dl.download = 'share-' + Date.now() + '.png';
+  modal.classList.add('show');
+}
+
+/* ============ 启动 ============ */
+render();
+</script>
+<script>
+/* 1) iOS 用 canvas 动态生成 PNG 图标（iOS 不认 SVG 的 apple-touch-icon） */
+(function(){
+  try{
+    var c = document.createElement('canvas');
+    c.width = c.height = 180;
+    var x = c.getContext('2d');
+    var g = x.createLinearGradient(0, 0, 180, 180);
+    g.addColorStop(0, '#5b8cff'); g.addColorStop(1, '#7b5cff');
+    x.fillStyle = g; x.fillRect(0, 0, 180, 180);
+    x.strokeStyle = '#fff'; x.lineWidth = 10; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath();
+    x.moveTo(38, 124); x.lineTo(78, 92); x.lineTo(108, 106); x.lineTo(142, 58);
+    x.stroke();
+    x.fillStyle = '#fff';
+    x.beginPath(); x.arc(142, 58, 13, 0, Math.PI * 2); x.fill();
+    var link = document.createElement('link');
+    link.rel = 'apple-touch-icon';
+    link.href = c.toDataURL('image/png');
+    document.head.appendChild(link);
+  }catch(e){}
+})();
+
+/* 2) 注册 Service Worker + 自动更新 */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('service-worker.js').then(function(reg){
+      // 回到前台时检查更新
+      document.addEventListener('visibilitychange', function(){
+        if (document.visibilityState === 'visible') reg.update().catch(function(){});
+      });
+      // 只有“已有 controller”（即不是首次安装）时才自动刷新，避免首次打开就闪一下
+      if (navigator.serviceWorker.controller) {
+        var refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function(){
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+      }
+    }).catch(function(){});
+  });
+}
 </script>
 </body>
 </html>

@@ -28,6 +28,9 @@ body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang S
 .hero-label{font-size:12.5px;opacity:.9;letter-spacing:.4px}
 .days-badge{font-size:11.5px;background:rgba(255,255,255,.24);padding:4px 10px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0}
 .hero-value{font-size:33px;font-weight:700;margin:5px 0 14px;letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.15;position:relative;z-index:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-main{display:flex;align-items:center;gap:12px;margin:5px 0 14px;position:relative;z-index:1}
+.hero-main .hero-value{margin:0;flex:1;min-width:0}
+.goal-ring{width:72px;height:72px;flex-shrink:0;display:block}
 .hero-metrics{display:flex;gap:8px;position:relative;z-index:1}
 .hm{flex:1;background:rgba(255,255,255,.16);border-radius:12px;padding:9px 10px;min-width:0}
 .hm span{display:block;font-size:11px;opacity:.85;margin-bottom:3px}
@@ -221,7 +224,7 @@ function newAccount(name){
     id: uid(), name: name || '新账户',
     color: PALETTE[state.accounts.length % PALETTE.length],
     mode: 'simple', startDate: todayStr(),
-    principal: 0, assets: 0,
+    principal: 0, assets: 0, targetAmount: 0,
     holdings: [], history: [], notes: []
   };
 }
@@ -232,7 +235,7 @@ function seedState(){
       {
         id: uid(), name: '养老定投账户', color: PALETTE[0], mode: 'detail',
         startDate: (() => { const d = new Date(); d.setDate(d.getDate() - 365); return formatDate(d); })(),
-        principal: 0, assets: 0,
+        principal: 0, assets: 0, targetAmount: 0,
         holdings: [
           { id: uid(), name: '创业板指数基金', principal: 24000, assets: 26400, color: PALETTE[0] },
           { id: uid(), name: '中证红利指数基金', principal: 36000, assets: 38520, color: PALETTE[1] }
@@ -243,7 +246,7 @@ function seedState(){
       {
         id: uid(), name: '稳健理财账户', color: PALETTE[2], mode: 'simple',
         startDate: (() => { const d = new Date(); d.setDate(d.getDate() - 120); return formatDate(d); })(),
-        principal: 50000, assets: 52300, holdings: [], history: [], notes: []
+        principal: 50000, assets: 52300, targetAmount: 0, holdings: [], history: [], notes: []
       }
     ]
   };
@@ -258,6 +261,7 @@ function normalizeState(s){
     if(typeof acc.startDate !== 'string') acc.startDate = '';
     if(!acc.color) acc.color = PALETTE[0];
     if(!acc.mode) acc.mode = 'simple';
+    if(typeof acc.targetAmount !== 'number') acc.targetAmount = 0;
   });
   return s;
 }
@@ -458,7 +462,10 @@ function renderAccount(id){
         <div class="hero-label">资产（元）</div>
         ${days > 0 ? `<span class="days-badge">实盘第 ${days} 天</span>` : ''}
       </div>
-      <div class="hero-value">${fmtMoney(s.assets)}</div>
+      <div class="hero-main">
+           <div class="hero-value">${fmtMoney(s.assets)}</div>
+           ${(acc.targetAmount && acc.targetAmount > 0) ? `<canvas class="goal-ring" id="c-goal"></canvas>` : ''}
+      </div>
       <div class="hero-metrics">
         <div class="hm"><span>本金</span><b>${shortMoney(s.principal)}</b></div>
         <div class="hm"><span>收益</span><b class="${profitCls}">${shortSigned(s.profit)}</b></div>
@@ -557,6 +564,10 @@ function renderAccountEdit(id){
       <div class="form-gap">
         <label class="field-label">初始投资时间（用于计算实盘天数）</label>
         <input class="inp" type="date" data-field="acc-start" data-acc-id="${acc.id}" value="${acc.startDate || ''}">
+      </div>
+      <div class="form-gap">
+        <label class="field-label">目标金额（可选，留空或填 0 则不显示进度）</label>
+        <input class="inp" type="number" inputmode="decimal" step="100" data-field="acc-target" data-acc-id="${acc.id}" value="${acc.targetAmount || ''}" placeholder="例如 100000">
       </div>
       <div>
         <label class="field-label">账户颜色</label>
@@ -750,6 +761,50 @@ function drawBars(canvas, items){
     ctx.fillText(fmtRate(it.rate), w - 4, y);
   });
 }
+function drawGoalRing(canvas, current, target){
+  if(!canvas || !target || target <= 0) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const size = 72;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, size, size);
+
+  const cx = size / 2, cy = size / 2;
+  const R = size / 2 - 4;
+  const lw = 7;
+  const realPct = current / target * 100;
+  const drawn = Math.min(Math.max(realPct, 0) / 100, 1); // 环最多画满，不超出
+  const done = realPct >= 100;
+
+  // 底环
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.25)';
+  ctx.lineWidth = lw;
+  ctx.stroke();
+
+  // 进度环
+  if(drawn > 0){
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * drawn);
+    ctx.strokeStyle = done ? '#4ff0d4' : '#FBFF8A';
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  // 中心百分比
+  const txt = (realPct >= 1000 ? '999+' : Math.round(realPct)) + '%';
+  ctx.fillStyle = done ? '#4ff0d4' : '#FBFF8A';
+  ctx.font = '700 14px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(txt, cx, cy);
+}
 
 /* 走势图：本金/市值（左轴）+ 收益率（右轴），平滑无点 */
 function drawHistoryChart(canvas, history){
@@ -837,18 +892,30 @@ function drawHistoryChart(canvas, history){
 
   function drawSmooth(getY, strokeColor, fillColor){
     const pts = points.map(p => ({ x: p.x, y: getY(p) }));
+    const tension = 0.6;                 // 0~1，越小越平直；觉得过冲就调到 0.35
+    const getCP = i => {
+      if(i < 0) return pts[0];
+      if(i >= pts.length) return pts[pts.length - 1];
+      return pts[i];
+    };
+    function buildPath(){
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for(let i = 0; i < pts.length - 1; i++){
+        const p0 = getCP(i - 1), p1 = pts[i], p2 = pts[i + 1], p3 = getCP(i + 2);
+        const cp1x = p1.x + (p2.x - p0.x) / 6 * tension * 2;
+        const cp1y = p1.y + (p2.y - p0.y) / 6 * tension * 2;
+        const cp2x = p2.x - (p3.x - p1.x) / 6 * tension * 2;
+        const cp2y = p2.y - (p3.y - p1.y) / 6 * tension * 2;
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+    }
     if(fillColor){
       ctx.save();
       ctx.beginPath();
       ctx.rect(padL, padT, cw, ch);
       ctx.clip();
       ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for(let i = 0; i < pts.length - 1; i++){
-        const p1 = pts[i], p2 = pts[i+1];
-        const mx = (p1.x + p2.x) / 2;
-        ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
-      }
+      buildPath();
       ctx.lineTo(pts[pts.length-1].x, padT + ch);
       ctx.lineTo(pts[0].x, padT + ch);
       ctx.closePath();
@@ -860,12 +927,7 @@ function drawHistoryChart(canvas, history){
       ctx.restore();
     }
     ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for(let i = 0; i < pts.length - 1; i++){
-      const p1 = pts[i], p2 = pts[i+1];
-      const mx = (p1.x + p2.x) / 2;
-      ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
-    }
+    buildPath();
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
@@ -916,6 +978,8 @@ function afterRender(){
   } else if(view.name === 'account'){
     const acc = state.accounts.find(a => a.id === view.id);
     if(!acc) return;
+    const cvGoal = document.getElementById('c-goal');
+    if(cvGoal) drawGoalRing(cvGoal, calcAcc(acc).assets, acc.targetAmount);
     const cvH = document.getElementById('c-history');
     if(cvH){
       const hist = (acc.history || []).slice().sort((a,b) => a.date.localeCompare(b.date));
@@ -1127,6 +1191,7 @@ document.addEventListener('input', e => {
   else if(field === 'acc-start'){ acc.startDate = el.value; }
   else if(field === 'acc-principal'){ acc.principal = num(el.value); }
   else if(field === 'acc-assets'){ acc.assets = num(el.value); }
+  else if(field === 'acc-target'){ acc.targetAmount = Math.max(0, num(el.value)); }
   else if(field === 'h-name'){
     const h = (acc.holdings || []).find(x => x.id === hId);
     if(h) h.name = el.value;
@@ -1216,7 +1281,7 @@ function shareAll(){
     title: '攒钱日记 · 总览',
     subtitle: todayStr(),
     days: 0,
-    main: { label: '总资产（元）', value: g.assets, principal: g.principal, profit: g.profit, rate: g.rate },
+    main: { label: '总资产（元）', value: g.assets, principal: g.principal, profit: g.profit, rate: g.rate, target: 0 },
     donutTitle: '账户资产分布',
     donutItems: items,
     donutTotal: total,
@@ -1253,7 +1318,7 @@ function shareAcc(id){
     title: acc.name || '账户详情',
     subtitle: todayStr(),
     days,
-    main: { label: '资产（元）', value: s.assets, principal: s.principal, profit: s.profit, rate: s.rate },
+    main: { label: '资产（元）', value: s.assets, principal: s.principal, profit: s.profit, rate: s.rate, target: acc.targetAmount || 0 },
     donutTitle: acc.mode === 'detail' ? '标的占比' : '',
     donutItems: items,
     donutTotal: total,
@@ -1370,9 +1435,14 @@ function drawShareMainCard(ctx, x, y, w, h, m){
   ctx.textBaseline = 'top';
   ctx.fillText(m.label, px, y + 56);
 
+  const hasTarget = m.target && m.target > 0;
   ctx.fillStyle = '#fff';
   ctx.font = '700 84px ' + FONT;
-  ctx.fillText(fitText(ctx, fmtMoney(m.value), w - 96), px, y + 110);
+  ctx.fillText(fitText(ctx, fmtMoney(m.value), hasTarget ? w - 300 : w - 96), px, y + 110);
+
+  if(hasTarget){
+    drawShareGoalRing(ctx, x + w - 130, y + 160, 72, 16, m.value, m.target);
+  }
 
   const boxY = y + 280;
   const boxH = 130;
@@ -1393,6 +1463,46 @@ function drawShareMainCard(ctx, x, y, w, h, m){
     ctx.font = '700 38px ' + FONT;
     ctx.fillText(fitText(ctx, vals[i], boxW - 48), bx + 24, boxY + 70);
   });
+}
+function drawShareGoalRing(ctx, cx, cy, R, lw, current, target){
+  if(!target || target <= 0) return;
+  const realPct = current / target * 100;
+  const drawn = Math.min(Math.max(realPct, 0) / 100, 1);
+  const done = realPct >= 100;
+
+  // 底环
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.25)';
+  ctx.lineWidth = lw;
+  ctx.stroke();
+
+  // 进度环
+  if(drawn > 0){
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * drawn);
+    ctx.strokeStyle = done ? '#4ff0d4' : '#ffe28a';
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  // 中心百分比
+  const pctTxt = (realPct >= 1000 ? '999+' : Math.round(realPct)) + '%';
+  ctx.fillStyle = done ? '#4ff0d4' : '#ffe28a';
+  ctx.font = '700 34px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(pctTxt, cx, cy - 8);
+
+  // 小标签
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  ctx.font = '22px ' + FONT;
+  ctx.fillText('目标达成', cx, cy + 26);
+
+  // 恢复绘制状态，避免影响后面三个小格子
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
 }
 
 function drawShareHistory(ctx, x, y, w, h, history){
@@ -1497,18 +1607,30 @@ function drawShareHistory(ctx, x, y, w, h, history){
 
   function drawSmooth(getY, strokeColor, fillColor){
     const pts = points.map(p => ({ x: p.x, y: getY(p) }));
+    const tension = 0.5;
+    const getCP = i => {
+      if(i < 0) return pts[0];
+      if(i >= pts.length) return pts[pts.length - 1];
+      return pts[i];
+    };
+    function buildPath(){
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for(let i = 0; i < pts.length - 1; i++){
+        const p0 = getCP(i - 1), p1 = pts[i], p2 = pts[i + 1], p3 = getCP(i + 2);
+        const cp1x = p1.x + (p2.x - p0.x) / 6 * tension * 2;
+        const cp1y = p1.y + (p2.y - p0.y) / 6 * tension * 2;
+        const cp2x = p2.x - (p3.x - p1.x) / 6 * tension * 2;
+        const cp2y = p2.y - (p3.y - p1.y) / 6 * tension * 2;
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+    }
     if(fillColor){
       ctx.save();
       ctx.beginPath();
       ctx.rect(cx, cy, cw, ch);
       ctx.clip();
       ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for(let i = 0; i < pts.length - 1; i++){
-        const p1 = pts[i], p2 = pts[i+1];
-        const mx = (p1.x + p2.x) / 2;
-        ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
-      }
+      buildPath();
       ctx.lineTo(pts[pts.length-1].x, cy + ch);
       ctx.lineTo(pts[0].x, cy + ch);
       ctx.closePath();
@@ -1520,12 +1642,7 @@ function drawShareHistory(ctx, x, y, w, h, history){
       ctx.restore();
     }
     ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for(let i = 0; i < pts.length - 1; i++){
-      const p1 = pts[i], p2 = pts[i+1];
-      const mx = (p1.x + p2.x) / 2;
-      ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
-    }
+    buildPath();
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 3.5;
     ctx.lineJoin = 'round';

@@ -29,10 +29,10 @@
         <p class="text-xs text-slate-500 mt-0.5">打工人攒钱日记 · 数据自动化统计与多账户精细化管理</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button id="export-img-btn" onclick="exportCardImage()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1 shadow-sm">
-          📸 导出战报
+        <button id="export-img-btn" onclick="exportCardImage()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm px-3.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 shadow-sm">
+          📸 导出战报图片
         </button>
-        <button onclick="openAccountModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm px-3 py-1.5 rounded-lg font-medium transition shadow-sm">
+        <button onclick="openAccountModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm px-3.5 py-1.5 rounded-lg font-medium transition shadow-sm">
           + 新增账户
         </button>
       </div>
@@ -43,59 +43,62 @@
       <!-- 动态渲染账户 Tab 按钮 -->
     </div>
 
-    <!-- 核心战报卡片区 -->
-    <div id="capture-area" class="space-y-5">
+    <!-- 主体容器 -->
+    <div class="space-y-5">
       
-      <!-- 主战报卡片 -->
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden light-watermark-bg">
-        <!-- 头部信息 -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-2 border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-base shadow-md">
+      <!-- 📸 专属截图捕获区域（完美居中与防截断加固） -->
+      <div id="capture-area" class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xl relative overflow-hidden light-watermark-bg">
+        
+        <!-- 头部信息：严格垂直居中对齐 -->
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
               💰
             </div>
-            <div>
-              <div class="font-bold text-slate-900 text-sm sm:text-base flex flex-wrap items-center gap-1.5">
+            <div class="flex flex-col justify-center">
+              <div class="font-bold text-slate-900 text-base flex items-center gap-2 leading-tight">
                 <span id="display-blogger-name">打工人攒钱日记</span>
                 <span class="text-xs text-indigo-600 font-semibold" id="current-view-tag">· 全局总览</span>
                 <button onclick="editBloggerName()" class="text-xs text-slate-400 hover:text-indigo-600 no-export" title="修改博主名称">✏️</button>
               </div>
-              <div class="text-[11px] text-slate-400" id="current-date-text">更新时间：2026.11.07</div>
+              <div class="text-[11px] text-slate-400 mt-1" id="current-date-text">更新时间：2026.11.8</div>
             </div>
           </div>
-          <div class="flex items-center gap-2 self-end sm:self-auto">
-            <span class="bg-indigo-50 text-indigo-600 border border-indigo-200/60 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-              <span>🗓️</span> 实盘第 <span id="days-count">365</span> 天
-            </span>
-            <button id="edit-start-date-btn" onclick="editAccountStartDate()" class="text-xs text-slate-500 hover:text-indigo-600 no-export bg-slate-50 border border-slate-200 px-2 py-1 rounded-md" style="display:none;" title="修改起始日期">改日期</button>
+
+          <!-- 实盘天数徽章：采用 flex items-center 确保在任何设备上完美垂直居中 -->
+          <div class="flex items-center gap-2 shrink-0">
+            <div class="bg-indigo-50 text-indigo-600 border border-indigo-200/60 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 leading-none">
+              <span>🗓️</span><span>实盘第 <span id="days-count">312</span> 天</span>
+            </div>
+            <button id="edit-start-date-btn" onclick="editAccountStartDate()" class="text-[11px] text-slate-500 hover:text-indigo-600 no-export bg-slate-50 border border-slate-200 px-2 py-1.5 rounded-md leading-none" style="display:none;" title="修改起始日期">改日期</button>
           </div>
         </div>
 
-        <!-- 4大核心数据网格（金额去小数点，收益率保留2位） -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3 shadow-sm">
-            <div class="text-[11px] text-slate-500 mb-1">累计投入本金</div>
-            <div class="text-lg sm:text-xl font-extrabold text-slate-900 truncate" id="total-principal">¥ 0</div>
+        <!-- 4大核心数据网格：扩大宽度和内边距，彻底解决数字显示不全和截断问题 -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-6">
+          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1.5 font-medium">累计投入本金</div>
+            <div class="text-lg font-black text-slate-900 tracking-tight" id="total-principal">¥ 0</div>
           </div>
-          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3 shadow-sm">
-            <div class="text-[11px] text-slate-500 mb-1">当前资产总值</div>
-            <div class="text-lg sm:text-xl font-extrabold text-indigo-600 truncate" id="total-asset">¥ 0</div>
+          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1.5 font-medium">当前资产总值</div>
+            <div class="text-lg font-black text-indigo-600 tracking-tight" id="total-asset">¥ 0</div>
           </div>
-          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3 shadow-sm">
-            <div class="text-[11px] text-slate-500 mb-1">持仓累计收益</div>
-            <div class="text-lg sm:text-xl font-extrabold truncate" id="total-profit">¥ 0</div>
+          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1.5 font-medium">持仓累计收益</div>
+            <div class="text-lg font-black tracking-tight" id="total-profit">¥ 0</div>
           </div>
-          <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3 shadow-sm">
-            <div class="text-[11px] text-slate-500 mb-1">整体收益率</div>
-            <div class="text-lg sm:text-xl font-extrabold truncate" id="total-rate">0.00%</div>
+          <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5 shadow-sm">
+            <div class="text-xs text-slate-500 mb-1.5 font-medium">整体收益率</div>
+            <div class="text-lg font-black tracking-tight" id="total-rate">0.00%</div>
           </div>
         </div>
 
         <!-- 统计图表区 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1" id="charts-container">
           <!-- 动态渲染图表1 -->
-          <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1">
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
               <span>📊</span> <span id="chart1-title">全局标的分散度 / 占比</span>
             </h3>
             <div class="h-48 relative flex items-center justify-center">
@@ -103,8 +106,8 @@
             </div>
           </div>
           <!-- 动态渲染图表2 -->
-          <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1">
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
               <span>📉</span> <span id="chart2-title">各标的盈亏对比 (元)</span>
             </h3>
             <div class="h-48 relative">
@@ -114,7 +117,7 @@
         </div>
       </div>
 
-      <!-- 当前选中账户的详细持仓清单 / 历史净值记录管理 -->
+      <!-- 当前选中账户的详细持仓清单 / 历史净值记录管理（独立于截图区之外） -->
       <div id="account-details-container" class="space-y-4">
         <!-- 由 JS 动态渲染 -->
       </div>
@@ -215,7 +218,7 @@
 
   <script>
     // --- 核心数据结构与初始样例 ---
-    const STORAGE_KEY = 'invest_dashboard_data_v4';
+    const STORAGE_KEY = 'invest_dashboard_data_v6';
     
     let defaultData = {
       bloggerName: "打工人攒钱日记",
@@ -260,7 +263,7 @@
     let currentTab = 'all';
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('current-date-text').innerText = `更新时间：${new Date().toLocaleDateString('zh-CN')}`;
+      document.getElementById('current-date-text').innerText = `更新时间：${new Date().toLocaleDateString('zh-CN').replace(/\//g, '.')}`;
       renderApp();
     });
 
@@ -287,7 +290,6 @@
       return diffDays > 0 ? diffDays : 1;
     }
 
-    // 金额格式化（不带小数，避免文字过长）
     function formatMoney(val) {
       return '¥ ' + Math.round(Number(val) || 0).toLocaleString('zh-CN');
     }
@@ -370,11 +372,10 @@
       rateEl.innerText = `${totalRate >= 0 ? '+' : ''}${totalRate.toFixed(2)}%`;
 
       const isPositive = totalProfit >= 0;
-      profitEl.className = `text-lg sm:text-xl font-extrabold truncate ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
-      rateEl.className = `text-lg sm:text-xl font-extrabold truncate ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
+      profitEl.className = `text-lg font-black tracking-tight truncate ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
+      rateEl.className = `text-lg font-black tracking-tight truncate ${isPositive ? 'text-rose-500' : 'text-emerald-600'}`;
     }
 
-    // 渲染全局图表（饼图带占比图例 + 柱状图）
     function renderGlobalCharts(targetList) {
       document.getElementById('chart1-title').innerText = '全局标的分散度 / 占比';
       document.getElementById('chart2-title').innerText = '各标的盈亏对比 (元)';
@@ -384,7 +385,6 @@
       const profitData = targetList.map(t => t.asset - t.principal);
       const profitColors = profitData.map(p => p >= 0 ? '#fb7185' : '#34d399'); 
 
-      // 1. 饼图（图例带占比）
       const ctx1 = document.getElementById('chart1').getContext('2d');
       if (chart1Instance) chart1Instance.destroy();
       chart1Instance = new Chart(ctx1, {
@@ -441,7 +441,6 @@
         }
       });
 
-      // 2. 柱状图
       const ctx2 = document.getElementById('chart2').getContext('2d');
       if (chart2Instance) chart2Instance.destroy();
       chart2Instance = new Chart(ctx2, {
@@ -483,7 +482,6 @@
       });
     }
 
-    // 渲染账户专属图表（包含双轴平滑追踪曲线，命名统一为“账户名-历史数据”）
     function renderAccountSpecificCharts(acc) {
       const container = document.getElementById('charts-container');
       
@@ -495,13 +493,14 @@
       const hAsset = historyData.map(h => h.asset);
       const hRates = historyData.map(h => h.principal > 0 ? Number(((h.asset - h.principal) / h.principal * 100).toFixed(2)) : 0);
 
+      // 严格要求：图表标题仅显示 账户名-历史数据
+      const chartTitleText = `${acc.name}-历史数据`;
+
       if (acc.mode === 'summary') {
-        // 总览模式：历史双轴平滑曲线独占两栏
         container.innerHTML = `
-          <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 shadow-sm md:col-span-2">
-            <h3 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center justify-between">
-              <span class="flex items-center gap-1">📈 <span>${acc.name}-历史数据</span></span>
-              <span class="text-[10px] text-indigo-600 font-normal">本金/市值 & 收益率双轴追踪</span>
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm md:col-span-2">
+            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
+              <span>📈</span> <span>${chartTitleText}</span>
             </h3>
             <div class="h-56 relative">
               <canvas id="historyDualChart"></canvas>
@@ -510,19 +509,18 @@
         `;
         renderDualAxisLineChart('historyDualChart', hLabels, hPrincipal, hAsset, hRates);
       } else {
-        // 明细模式：左侧资产占比饼图（图例带占比），右侧历史双轴平滑曲线
         container.innerHTML = `
-          <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1">
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
               <span>📊</span> <span>${acc.name} - 标的占比</span>
             </h3>
             <div class="h-48 relative flex items-center justify-center">
               <canvas id="accPieChart"></canvas>
             </div>
           </div>
-          <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center justify-between">
-              <span>📈 <span>${acc.name}-历史数据</span></span>
+          <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1">
+              <span>📈</span> <span>${chartTitleText}</span>
             </h3>
             <div class="h-48 relative">
               <canvas id="accDualChart"></canvas>
@@ -582,8 +580,6 @@
       }
     }
 
-    // 渲染双轴平滑追踪曲线图（左轴：金额，右轴：收益率%）
-    // 横坐标严格保证：第一个时间是首次数据时间，第三个时间点显示最新数据时间，中间选一个时间
     function renderDualAxisLineChart(canvasId, labels, principalData, assetData, rateData) {
       const ctx = document.getElementById(canvasId).getContext('2d');
       if (chart2Instance) chart2Instance.destroy();
@@ -658,7 +654,6 @@
                 callback: function(val, index) {
                   const len = labels.length;
                   if (len <= 3) return this.getLabelForValue(val);
-                  // 严格控制：首、中、末三个时间点
                   const midIndex = Math.floor(len / 2);
                   if (index === 0 || index === midIndex || index === len - 1) {
                     return this.getLabelForValue(val);
@@ -689,7 +684,7 @@
                 font: { size: 9 },
                 callback: function(value) { return value + '%'; }
               },
-              grid: { drawOnChartArea: false } // 不干扰左侧网格
+              grid: { drawOnChartArea: false }
             }
           }
         }
@@ -698,7 +693,7 @@
 
     function renderTabs() {
       const container = document.getElementById('account-tabs');
-      let html = `<button onclick="switchTab('all')" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm ${currentTab === 'all' ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">📁 全部汇总</button>`;
+      let html = `<button onclick="switchTab('all')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm ${currentTab === 'all' ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">📁 全部汇总</button>`;
       
       appData.accounts.forEach(acc => {
         html += `<button onclick="switchTab('${acc.id}')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm ${currentTab === acc.id ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">💼 ${acc.name}</button>`;
@@ -713,7 +708,6 @@
       renderAccountsDetail();
     }
 
-    // 渲染下方账户明细区（极简总览模式已去除重复的本金/市值文本）
     function renderAccountsDetail() {
       const container = document.getElementById('account-details-container');
       container.innerHTML = '';
@@ -788,7 +782,6 @@
             </button>
           `;
         } else {
-          // 极简总览模式：去除了重复的本金市值数据显示，仅保留快捷修改入口
           cardHtml += `
             <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-lg flex justify-between items-center text-xs mb-3 no-export">
               <span class="text-slate-500">当前总投入: <b>${formatMoney(accPrincipal)}</b> | 当前总市值: <b>${formatMoney(accAsset)}</b></span>
@@ -797,7 +790,6 @@
           `;
         }
 
-        // 历史净值记录管理模块
         cardHtml += `
           <div class="border-t border-slate-100 pt-2.5 mt-1">
             <div class="flex justify-between items-center mb-2">
@@ -1011,11 +1003,11 @@
         link.click();
 
         document.querySelectorAll('.no-export').forEach(el => el.style.display = '');
-        btn.innerText = '📸 导出战报';
+        btn.innerText = '📸 导出战报图片';
       }).catch(err => {
         alert('导出失败，你可以直接使用手机截屏：' + err);
         document.querySelectorAll('.no-export').forEach(el => el.style.display = '');
-        btn.innerText = '📸 导出战报';
+        btn.innerText = '📸 导出战报图片';
       });
     }
   </script>

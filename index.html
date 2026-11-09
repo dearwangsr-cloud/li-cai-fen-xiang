@@ -791,7 +791,7 @@ function drawGoalRing(canvas, current, target){
   if(drawn > 0){
     ctx.beginPath();
     ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * drawn);
-    ctx.strokeStyle = done ? '#4ff0d4' : '#FBFF8A';
+    ctx.strokeStyle = done ? '#4ff0d4' : '#FFFF36';
     ctx.lineWidth = lw;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -799,7 +799,7 @@ function drawGoalRing(canvas, current, target){
 
   // 中心百分比
   const txt = (realPct >= 1000 ? '999+' : Math.round(realPct)) + '%';
-  ctx.fillStyle = done ? '#4ff0d4' : '#FBFF8A';
+  ctx.fillStyle = done ? '#4ff0d4' : '#FFFF36';
   ctx.font = '700 14px ' + FONT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -819,7 +819,7 @@ function drawHistoryChart(canvas, history){
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, w, h);
 
-  const padL = 52, padR = 52, padT = 18, padB = 28;
+  const padL = 50, padR = 42, padT = 18, padB = 28;
   const cw = Math.max(20, w - padL - padR);
   const ch = Math.max(20, h - padT - padB);
 
@@ -892,7 +892,7 @@ function drawHistoryChart(canvas, history){
 
   function drawSmooth(getY, strokeColor, fillColor){
     const pts = points.map(p => ({ x: p.x, y: getY(p) }));
-    const tension = 0.6;                 // 0~1，越小越平直；觉得过冲就调到 0.35
+    const tension = 0.25;                 // 0~1，越小越平直；觉得过冲就调到 0.35
     const getCP = i => {
       if(i < 0) return pts[0];
       if(i >= pts.length) return pts[pts.length - 1];
@@ -1438,10 +1438,10 @@ function drawShareMainCard(ctx, x, y, w, h, m){
   const hasTarget = m.target && m.target > 0;
   ctx.fillStyle = '#fff';
   ctx.font = '700 84px ' + FONT;
-  ctx.fillText(fitText(ctx, fmtMoney(m.value), hasTarget ? w - 300 : w - 96), px, y + 110);
+  ctx.fillText(fitText(ctx, fmtMoney(m.value), hasTarget ? w - 340 : w - 96), px, y + 110);
 
   if(hasTarget){
-    drawShareGoalRing(ctx, x + w - 130, y + 160, 72, 16, m.value, m.target);
+    drawShareGoalRing(ctx, x + w - 160, y + 140, 90, 20, m.value, m.target);
   }
 
   const boxY = y + 280;
@@ -1481,7 +1481,7 @@ function drawShareGoalRing(ctx, cx, cy, R, lw, current, target){
   if(drawn > 0){
     ctx.beginPath();
     ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * drawn);
-    ctx.strokeStyle = done ? '#4ff0d4' : '#ffe28a';
+    ctx.strokeStyle = done ? '#4ff0d4' : '#FFFF36';
     ctx.lineWidth = lw;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -1489,16 +1489,16 @@ function drawShareGoalRing(ctx, cx, cy, R, lw, current, target){
 
   // 中心百分比
   const pctTxt = (realPct >= 1000 ? '999+' : Math.round(realPct)) + '%';
-  ctx.fillStyle = done ? '#4ff0d4' : '#ffe28a';
-  ctx.font = '700 34px ' + FONT;
+  ctx.fillStyle = done ? '#4ff0d4' : '#FFFF36';
+  ctx.font = '700 48px ' + FONT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(pctTxt, cx, cy - 8);
+  ctx.fillText(pctTxt, cx, cy - 14);
 
   // 小标签
   ctx.fillStyle = 'rgba(255,255,255,.75)';
-  ctx.font = '22px ' + FONT;
-  ctx.fillText('目标达成', cx, cy + 26);
+  ctx.font = '26px ' + FONT;
+  ctx.fillText('目标达成', cx, cy + 34);
 
   // 恢复绘制状态，避免影响后面三个小格子
   ctx.textAlign = 'left';
@@ -1535,7 +1535,7 @@ function drawShareHistory(ctx, x, y, w, h, history){
     lx += ctx.measureText(li.t).width + 84;
   });
 
-  const padL = 130, padR = 130, padT = 120, padB = 60;
+  const padL = 130, padR = 120, padT = 120, padB = 60;
   const cx = x + padL;
   const cy = y + padT;
   const cw = w - padL - padR;
@@ -1607,7 +1607,7 @@ function drawShareHistory(ctx, x, y, w, h, history){
 
   function drawSmooth(getY, strokeColor, fillColor){
     const pts = points.map(p => ({ x: p.x, y: getY(p) }));
-    const tension = 0.5;
+    const tension = 0.35;
     const getCP = i => {
       if(i < 0) return pts[0];
       if(i >= pts.length) return pts[pts.length - 1];
